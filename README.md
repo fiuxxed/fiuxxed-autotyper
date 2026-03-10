@@ -17,12 +17,12 @@
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
 # Installation Process: 
-## 1. **Delete any old python installations. Install Python 3.11 and make sure it's installed to PATH (You will see it at the bottom when opening the installion manager.)**
-## - Windows Install: [Python Windows](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
-## - Mac Install: [Python Mac](https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg)
-## 2. **Tap the green "Code" Button in **this** repository at the top of the page and Download ZIP!**
-## 3. **Unzip that folder by right clicking and extracting it (recommended to use WinRAR or 7zip.)**
-## 4. **Run install.bat once, then run.bat to launch anddd done! :D**
+**1.** **Delete any old python installations. Install Python 3.11 and make sure it's installed to PATH (You will see it at the bottom when opening the installion manager.)**
+- Windows Install: [Python Windows](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
+- Mac Install: [Python Mac](https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg)
+**2.** **Tap the green "Code" Button in **this** repository at the top of the page and Download ZIP!**
+**3.** ** **Unzip that folder by right clicking and extracting it (recommended to use WinRAR or 7zip.)**
+**4.** **Run install.bat once, then run.bat to launch anddd done! :D**
 
 (Requires a free Groq API key (set in settings in-app.))
 
