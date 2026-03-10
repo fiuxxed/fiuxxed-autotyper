@@ -19,7 +19,7 @@
 1. Install Python and make sure it's installed to PATH. 
 2. Tap the green "Code" Button and Download ZIP. 
 3. Unzip that folder (recommended to use WinRAR or 7zip).
-4.Run install.bat once, then run.bat to launch anddd done! :D 
+4. Run install.bat once, then run.bat to launch anddd done! :D 
 
 (Requires a free Groq API key (set in settings in-app.))
 
