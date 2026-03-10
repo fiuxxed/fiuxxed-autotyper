@@ -17,4 +17,6 @@ Features:
 
 Stack: Python · Flask · Groq API (Llama 4 Scout + Llama 3.3) · yt-dlp · pywin32 · pynput · Web Audio API
 
-SETUP: Run install.bat once, then run.bat to launch. Requires a free Groq API key.
+SETUP: Install Python and make sure it's installed to PATH. Unzip folder. Run install.bat once, then run.bat to launch. Done! :D 
+
+(Requires a free Groq API key.)
