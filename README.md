@@ -16,7 +16,7 @@
 📋 History — auto-saves all past scans and math solutions, formula library for reuse
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
-## Installation Process: 
+# Installation Process: 
 1. Delete any old python installations. Install Python 3.11 and make sure it's installed to PATH (You will see it at the bottom when opening the installion manager.)
 - Windows Install: [Python Windows](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
 - Mac Install: [Python Mac](https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg)
