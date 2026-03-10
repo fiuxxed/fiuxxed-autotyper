@@ -463,7 +463,7 @@ def get_client():
     if not HAS_GROQ: raise RuntimeError("groq not installed — run install.bat")
     return Groq(api_key=api_key)
 
-def ai_scan(b64, strictness="flag_all", examine_examples=False):
+def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=None):
     client = get_client()
     strict_note = ("Flag ANY answer that looks even slightly off, unclear, or potentially wrong."
         if strictness == "flag_all" else "Only flag answers that are clearly and definitively wrong.")
@@ -472,32 +472,45 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False):
         messages=[{"role":"user","content":[
             {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}},
             {"type":"text","text":(
-                "Look at this screenshot carefully. Find EVERY question visible on screen.\n\n"
-                "CRITICAL — HOW TO IDENTIFY QUESTIONS:\n"
-                "- A number inside a GREEN CIRCLE or any colored/highlighted circle (like ① ② ③) is ALWAYS a question number\n"
-                "- Any diagram, triangle, geometric shape, or figure that appears NEXT TO or BELOW a circled/numbered label is part of that question\n"
-                "- Plain numbers: '1.', '2.', 'Q1', 'a)', 'b)' — all questions\n"
-                "- A geometric diagram (triangle with angles/sides labeled) next to a number = geometry question, describe it fully\n"
-                "- NEVER skip a numbered item just because it contains a diagram instead of text\n"
-                "- Look for question marks, fill-in blanks, answer boxes\n"
+                (("EXTRA CONTEXT (use this to help answer questions):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
+                "You are scanning a student's assignment screenshot. Read the ENTIRE screen carefully.\n\n"
+
+                "── GOOGLE DOCS / WORD / WORKSHEET LAYOUTS ──\n"
+                "These assignments often have a TWO-COLUMN layout:\n"
+                "  LEFT column: reading passage, instructions, or source material\n"
+                "  RIGHT column (or below): answer boxes, blanks, or response fields\n"
+                "CRITICAL: The LEFT side is the SOURCE to read and understand. The RIGHT side contains the QUESTIONS/BLANKS to fill in.\n"
+                "- If you see 'Main Idea', 'Answer:', 'Summary:', 'Response:', 'Key Details:', 'Fill in:', or any labeled blank field → that IS the question to answer\n"
+                "- Use the reading passage/content on the LEFT to GENERATE the correct answer for the blank on the RIGHT\n"
+                "- A blinking cursor '|' or empty line after 'Answer:' means it is unanswered\n"
+                "- The Google Docs interface has a white document area with a gray background outside — the document content is what matters\n\n"
+
+                "── HOW TO FIND ALL QUESTIONS ──\n"
+                "- Numbered items: '1.', '2.', 'Q1', 'a)', 'b)' — all questions\n"
+                "- Labeled answer fields: 'Answer:', 'Main Idea:', 'Summary:', 'Fill in the blank', 'Response:' etc.\n"
+                "- Empty boxes, blank lines, or text fields waiting to be filled\n"
+                "- Highlighted labels (yellow, green, etc.) often mark where to write the answer\n"
+                "- Circled numbers ① ② ③ are always question numbers\n"
+                "- Geometric diagrams next to numbers = geometry questions\n"
                 "- Include ALL questions even if already answered\n\n"
-                "For EACH question:\n"
-                "1. question_label: the number/label (e.g. '1.', 'Q2', 'a)') — null if not visible\n"
-                "2. question: full question text. If question involves a diagram, describe it (e.g. 'Triangle with angles 97 28 55 degrees — Order sides shortest to longest')\n"
+
+                "── FOR EACH QUESTION ──\n"
+                "1. question_label: the label/number if visible (e.g. 'Main Idea', '1.', 'Q2') — null if none\n"
+                "2. question: what is being asked. For passage-based answer boxes, write e.g. 'What is the main idea of the passage about Enlightenment Thinkers?'\n"
                 "3. type: MULTIPLE_CHOICE, TRUE_FALSE, or WRITTEN\n"
-                "4. answered: true if person has written/selected an answer\n"
-                "5. user_answer: what they wrote/selected (null if unanswered)\n"
-                "6. correct_answer: the correct answer\n"
+                "4. answered: true only if the person has ALREADY written a real answer (not just a cursor or empty field)\n"
+                "5. user_answer: what they wrote (null if unanswered)\n"
+                "6. correct_answer: YOUR answer based on reading the full document/passage. For 'Main Idea' boxes — write a complete 1-2 sentence main idea answer using the passage content\n"
                 "7. is_correct: true/false/null (null if unanswered)\n"
                 f"8. {strict_note}\n"
-                "9. correction: if wrong, correction in EXACT SAME FORMAT as their answer\n"
+                "9. correction: if wrong, the corrected answer in the same format\n"
                 "10. confident: false only if you genuinely cannot read the content\n"
-                + ("11. Where helpful, include a brief worked example showing HOW to get the correct answer.\n\n"
+                + ("11. Where helpful, include a brief worked example.\n\n"
                    if examine_examples else
-                   "11. Do NOT include worked examples or sample problems — answer only.\n\n")
+                   "11. Do NOT include worked examples — answer only.\n\n")
                 + "Return ONLY valid JSON array (no markdown):\n"
-                '[{"question_label":"1.","question":"What is...","type":"WRITTEN",'
-                '"answered":false,"user_answer":null,"correct_answer":"Paris",'
+                '[{"question_label":"Main Idea","question":"What is the main idea of the passage?","type":"WRITTEN",'
+                '"answered":false,"user_answer":null,"correct_answer":"The Enlightenment was an intellectual movement that spread democratic ideas across Europe and the Americas in the 1700s.",'
                 '"is_correct":null,"correction":null,"confident":true}]\n'
                 "If no questions found: []"
             )}
@@ -509,13 +522,14 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False):
     if m: raw = m.group(0)
     return json.loads(raw)
 
-def ai_math(b64, examine_examples=False):
+def ai_math(b64, examine_examples=False, extra_context=None):
     client = get_client()
     resp = client.chat.completions.create(
         model="meta-llama/llama-4-scout-17b-16e-instruct",
         messages=[{"role":"user","content":[
             {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}},
             {"type":"text","text":(
+                (("EXTRA CONTEXT (use this to help solve problems):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
                 "Look at this screenshot. Find EVERY math or geometry problem visible.\n\n"
                 "CRITICAL — HOW TO IDENTIFY PROBLEMS:\n"
                 "- A number inside a GREEN CIRCLE or any colored circle (① ② ③) = problem number\n"
@@ -574,15 +588,20 @@ def ai_double_check(question):
     )
     return resp.choices[0].message.content.strip()
 
-def ai_qa(question, history, is_followup):
+def ai_qa(question, history, is_followup, extra_context=None):
     client = get_client()
+    ctx_block = ""
+    if extra_context:
+        joined = "\n\n".join(c.strip() for c in extra_context if c.strip())
+        if joined:
+            ctx_block = f"\n\n[EXTRA CONTEXT — use this to inform your answer]:\n{joined}"
     if is_followup and history:
-        messages = list(history) + [{"role":"user","content":f"{question}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]"}]
+        messages = list(history) + [{"role":"user","content":f"{question}{ctx_block}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]"}]
         max_tok = 400
     else:
         messages = [
             {"role":"system","content":"You are a sharp, direct assistant. Answer in ONE sentence, max 20 words. No intros, no filler. Just the answer."},
-            {"role":"user","content":question}
+            {"role":"user","content":question+ctx_block}
         ]
         max_tok = 120
     resp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages, max_tokens=max_tok, temperature=0.4)
@@ -604,9 +623,11 @@ _hk_listener    = None
 _voice_listener = None
 _type_state     = {"phase": "idle", "progress": 0, "status": "Ready"}
 _webview_window = None
+_windows_cache = []
 
-_AOT_HWND   = None   # cached window handle
-_aot_thread = None   # background watcher thread
+_AOT_HWND    = None   # cached window handle
+_aot_thread  = None   # background watcher thread
+_is_dragging = False  # pause AOT watcher during window drag to prevent crash
 
 HWND_TOPMOST    = -1
 HWND_NOTOPMOST  = -2
@@ -617,88 +638,77 @@ SWP_FLAGS       = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
 
 def _find_app_hwnd():
     """
-    Find our app window. Matches on title OR on the process name being
-    msedge/chrome running our localhost URL (Edge app-mode strips the title).
+    Find our app window. Priority order:
+    1. Exact PID match (_edge_pid set when we launched Edge)
+    2. Title match for pywebview window
+    3. Edge/Chrome process with our port in cmdline
     """
     if not HAS_WIN32:
         return None
 
-    TITLE_HINTS   = ("AutoTyper", "Fiuxxed")
-    # Never grab these — they're console/system windows
-    SKIP_TITLES   = ("cmd", "command prompt", "powershell", "python", "administrator",
-                     "c:\\windows", "conhost", "run_hidden")
     result = [None]
-    best_score = [0]
 
+    # 1. PID-exact match — most reliable for Edge app mode
+    if _edge_pid:
+        def pid_cb(hwnd, _):
+            if result[0]: return
+            if not ctypes.windll.user32.IsWindowVisible(hwnd): return
+            try:
+                _, wpid = win32process.GetWindowThreadProcessId(hwnd)
+                if wpid == _edge_pid:
+                    title = win32gui.GetWindowText(hwnd)
+                    if not title: return
+                    try:
+                        rect = win32gui.GetWindowRect(hwnd)
+                        if (rect[2]-rect[0]) > 200 and (rect[3]-rect[1]) > 200:
+                            result[0] = hwnd
+                    except Exception:
+                        result[0] = hwnd
+            except Exception: pass
+        try: win32gui.EnumWindows(pid_cb, None)
+        except Exception: pass
+        if result[0]: return result[0]
+
+    # 2. Title scan — works for pywebview (title = "Fiuxxed's AutoTyper v9.1")
+    TITLE_HINTS = ("AutoTyper", "Fiuxxed")
+    SKIP_TITLES = ("cmd", "command prompt", "powershell", "administrator", "conhost")
+    best_score  = [0]
     def cb(hwnd, _):
-        if not win32gui.IsWindowVisible(hwnd):
-            return
+        if not win32gui.IsWindowVisible(hwnd): return
         title = win32gui.GetWindowText(hwnd)
-        if not title:
-            return
+        if not title: return
         tl = title.lower()
-        # Hard skip console/system windows
-        if any(s in tl for s in SKIP_TITLES):
-            return
-        score = 0
-        for hint in TITLE_HINTS:
-            if hint in title:
-                score += 2 if hint in ("AutoTyper","Fiuxxed") else 1
-        if score == 0:
-            return
-        # Prefer windows in the right size range for our app
+        if any(s in tl for s in SKIP_TITLES): return
+        score = sum(2 for h in TITLE_HINTS if h in title)
+        if score == 0: return
         try:
             rect = win32gui.GetWindowRect(hwnd)
-            w = rect[2] - rect[0]
-            if 300 < w < 900:
-                score += 1
-        except Exception:
-            pass
+            if 300 < (rect[2]-rect[0]) < 900: score += 1
+        except Exception: pass
         if score > best_score[0]:
-            best_score[0] = score
-            result[0] = hwnd
+            best_score[0] = score; result[0] = hwnd
+    try: win32gui.EnumWindows(cb, None)
+    except Exception: pass
+    if result[0]: return result[0]
 
+    # 3. Process scan — Edge/Chrome with our port in cmdline
     try:
-        win32gui.EnumWindows(cb, None)
-    except Exception:
-        pass
-
-    # Fallback: find by process — look for msedge/chrome with our port in cmdline
-    if result[0] is None and HAS_WIN32:
-        try:
-            for proc in psutil.process_iter(["pid","name","cmdline"]):
-                name = (proc.info.get("name") or "").lower()
-                if "edge" not in name and "chrome" not in name:
-                    continue
-                cmdline = " ".join(proc.info.get("cmdline") or [])
-                if "7890" not in cmdline and "AutoTyper" not in cmdline:
-                    continue
-                def pid_cb(hwnd, pid):
-                    if not win32gui.IsWindowVisible(hwnd): return
-                    try:
-                        _, wpid = win32process.GetWindowThreadProcessId(hwnd)
-                        if wpid == pid and win32gui.GetWindowText(hwnd):
-                            result[0] = hwnd
-                    except Exception: pass
-                win32gui.EnumWindows(pid_cb, proc.info["pid"])
-                if result[0]: break
-        except Exception:
-            pass
-
-    # Final safety check — make sure the handle belongs to msedge or chrome process
-    # This prevents ever accidentally operating on Explorer or system windows
-    if result[0] and HAS_WIN32:
-        try:
-            _, pid = win32process.GetWindowThreadProcessId(result[0])
-            proc_name = ""
-            for p in psutil.process_iter(["pid","name"]):
-                if p.info["pid"] == pid:
-                    proc_name = (p.info["name"] or "").lower()
-                    break
-            if "edge" not in proc_name and "chrome" not in proc_name and "python" not in proc_name:
-                return None  # refuse to operate on non-browser windows
-        except Exception:
-            pass
+        for proc in psutil.process_iter(["pid","name","cmdline"]):
+            name = (proc.info.get("name") or "").lower()
+            if "edge" not in name and "chrome" not in name: continue
+            cmdline = " ".join(proc.info.get("cmdline") or [])
+            if "7890" not in cmdline: continue
+            pid = proc.info["pid"]
+            def _pcb(hwnd, _pid):
+                if result[0]: return
+                if not ctypes.windll.user32.IsWindowVisible(hwnd): return
+                try:
+                    _, wpid = win32process.GetWindowThreadProcessId(hwnd)
+                    if wpid == _pid and win32gui.GetWindowText(hwnd): result[0] = hwnd
+                except Exception: pass
+            win32gui.EnumWindows(_pcb, pid)
+            if result[0]: break
+    except Exception: pass
 
     return result[0]
 
@@ -712,22 +722,29 @@ def _set_hwnd_topmost(hwnd, on_top):
 
 def apply_always_on_top(val):
     """Called whenever the setting changes — immediately applies it."""
-    global _webview_window, _AOT_HWND
+    global _AOT_HWND
     on_top = bool(val)
-
-    # pywebview path
-    if _webview_window:
-        try:
-            _webview_window.on_top = on_top
-        except Exception:
-            pass
-
-    # win32 direct path — works for Edge app mode too
+    # Use win32 only — thread-safe. Never touch _webview_window from a Flask thread.
     if HAS_WIN32:
         hwnd = _AOT_HWND or _find_app_hwnd()
         if hwnd:
             _AOT_HWND = hwnd
             _set_hwnd_topmost(hwnd, on_top)
+
+def apply_opacity(val):
+    """Set window opacity (0-100) using win32 layered window."""
+    if not HAS_WIN32: return
+    hwnd = _AOT_HWND or _find_app_hwnd()
+    if not hwnd: return
+    try:
+        GWL_EXSTYLE = -20
+        WS_EX_LAYERED = 0x00080000
+        LWA_ALPHA = 0x00000002
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
+        alpha = int(max(0, min(100, val)) / 100 * 255)
+        ctypes.windll.user32.SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)
+    except Exception: pass
 
 def _aot_watcher():
     """
@@ -797,21 +814,16 @@ def _aot_watcher():
     # ── Polling loop ──
     while True:
         try:
-            val = bool(cfg.get("always_on_top", True))
-            # pywebview path — just set the property, it owns the window
-            if _webview_window:
-                try:
-                    _webview_window.on_top = val
-                except Exception:
-                    pass
-            # win32 path for Edge fallback
-            elif HAS_WIN32 and val:
-                hwnd = _find_app_hwnd()
-                if hwnd:
-                    _AOT_HWND = hwnd
-                    ctypes.windll.user32.SetWindowPos(
-                        hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
-                    )
+            # Skip entirely while user is dragging — SetWindowPos during drag causes crash
+            if not _is_dragging:
+                val = bool(cfg.get("always_on_top", True))
+                if HAS_WIN32 and val:
+                    hwnd = _find_app_hwnd()
+                    if hwnd:
+                        _AOT_HWND = hwnd
+                        ctypes.windll.user32.SetWindowPos(
+                            hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
+                        )
         except Exception:
             pass
         time.sleep(0.5)
@@ -833,6 +845,10 @@ def _toggle_pause():
 
 def _do_stop():
     engine.stop(); _type_state.update({"phase":"idle","progress":0,"status":"Stopped."})
+
+def _do_autotype():
+    """Triggered by voice command — same as pressing the hotkey start."""
+    _type_state["phase"] = "hotkey_trigger"
 
 def start_hotkeys():
     global _hk_listener
@@ -865,6 +881,7 @@ def api_settings():
         data = request.json or {}
         cfg.update(data); save_cfg(cfg); start_hotkeys()
         apply_always_on_top(cfg.get("always_on_top", True))
+        apply_opacity(cfg.get("opacity", 100))
         return jsonify({"ok": True})
     return jsonify(cfg)
 
@@ -922,10 +939,11 @@ def api_screenshot():
     data = request.json or {}
     hwnd = data.get("hwnd"); mode = data.get("mode","scan")
     strictness = data.get("strictness", cfg.get("scanner_wrong_answer_strictness","flag_all"))
+    extra_context = data.get("extra_context", [])
     try:
         img = capture_window(hwnd); b64 = img_to_b64(img)
         if mode == "math":
-            problems = ai_math(b64, examine_examples=cfg.get("examine_examples", False))
+            problems = ai_math(b64, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context)
             for p in problems:
                 eq = p.get("graph_eq")
                 p["graph_b64"] = make_graph(eq) if (eq and cfg.get("math_show_graphs", True)) else None
@@ -936,7 +954,7 @@ def api_screenshot():
             add_to_history("math", problems)
             return jsonify({"ok":True,"result":{"problems":problems}})
         else:
-            questions = ai_scan(b64, strictness, examine_examples=cfg.get("examine_examples", False))
+            questions = ai_scan(b64, strictness, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context)
             add_to_history("scan", questions)
             return jsonify({"ok":True,"result":{"questions":questions}})
     except Exception as e:
@@ -955,11 +973,33 @@ def api_qa_route():
     data = request.json or {}
     question = data.get("question","").strip()
     history = data.get("history",[]); is_followup = bool(data.get("followup", False))
+    extra_context = data.get("extra_context", [])
     if not question: return jsonify({"error":"No question"})
     try:
-        answer, new_history = ai_qa(question, history, is_followup)
+        answer, new_history = ai_qa(question, history, is_followup, extra_context)
         return jsonify({"answer":answer,"history":new_history})
     except Exception as e: return jsonify({"error":str(e)})
+
+@app_flask.route("/api/humanize", methods=["POST"])
+def api_humanize():
+    data = request.json or {}
+    text = data.get("text","").strip()
+    action = data.get("action","humanize")  # humanize | longer | shorter
+    if not text: return jsonify({"error":"No text"})
+    client = get_client()
+    p_humanize = f"Rewrite this to sound like a normal person wrote it. Keep the exact same meaning. Simple, natural, not robotic. No extra fluff. Give a slightly different version each time.\n\nText: {text}\n\nRewritten:"
+    p_longer   = f"Make this longer and more detailed while keeping the same meaning and natural tone. Don't add filler, add actual useful content.\n\nText: {text}\n\nExpanded:"
+    p_shorter  = f"Make this shorter and more concise while keeping the full meaning. Cut fluff only.\n\nText: {text}\n\nShortened:"
+    prompts = {"humanize": p_humanize, "longer": p_longer, "shorter": p_shorter}
+    try:
+        resp = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role":"user","content":prompts.get(action, prompts["humanize"])}],
+            max_tokens=400, temperature=0.85
+        )
+        return jsonify({"result": resp.choices[0].message.content.strip()})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app_flask.route("/api/formula_library", methods=["GET"])
 def api_formula_library(): return jsonify({"formulas": load_formula_lib()})
@@ -1225,6 +1265,18 @@ def api_window_drag():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
 
+@app_flask.route("/api/window/drag_start", methods=["POST"])
+def api_drag_start():
+    global _is_dragging
+    _is_dragging = True
+    return jsonify({"ok": True})
+
+@app_flask.route("/api/window/drag_end", methods=["POST"])
+def api_drag_end():
+    global _is_dragging
+    _is_dragging = False
+    return jsonify({"ok": True})
+
 @app_flask.route("/api/window/minimize", methods=["POST"])
 def api_window_minimize():
     if not HAS_WIN32: return jsonify({"ok": False})
@@ -1328,62 +1380,7 @@ SWP_FRAMECHANGED = 0x0020
 # _edge_pid: PID of the Edge process we launched — most reliable finder anchor
 _edge_pid = None
 
-def _find_app_hwnd():
-    """Find our Edge window. Uses PID if available, title scan as fallback."""
-    if not HAS_WIN32:
-        return None
 
-    result = [None]
-
-    # Primary: match by the exact PID we launched
-    if _edge_pid:
-        def pid_cb(hwnd, _):
-            if result[0]: return
-            if not ctypes.windll.user32.IsWindowVisible(hwnd): return
-            try:
-                _, wpid = win32process.GetWindowThreadProcessId(hwnd)
-                if wpid == _edge_pid:
-                    # Make sure it has a title and reasonable size
-                    title = win32gui.GetWindowText(hwnd)
-                    if not title: return
-                    try:
-                        rect = win32gui.GetWindowRect(hwnd)
-                        w = rect[2] - rect[0]
-                        h = rect[3] - rect[1]
-                        if w > 200 and h > 200:
-                            result[0] = hwnd
-                    except Exception:
-                        result[0] = hwnd
-            except Exception: pass
-        try:
-            win32gui.EnumWindows(pid_cb, None)
-        except Exception: pass
-        if result[0]:
-            return result[0]
-
-    # Fallback: scan all Edge/Chrome processes that have our port in cmdline
-    try:
-        for proc in psutil.process_iter(["pid","name","cmdline"]):
-            pname = (proc.info.get("name") or "").lower()
-            if "edge" not in pname and "chrome" not in pname:
-                continue
-            cmdline = " ".join(proc.info.get("cmdline") or [])
-            if "7890" not in cmdline:
-                continue
-            pid = proc.info["pid"]
-            def _pcb(hwnd, _pid):
-                if result[0]: return
-                if not ctypes.windll.user32.IsWindowVisible(hwnd): return
-                try:
-                    _, wpid = win32process.GetWindowThreadProcessId(hwnd)
-                    if wpid == _pid and win32gui.GetWindowText(hwnd):
-                        result[0] = hwnd
-                except Exception: pass
-            win32gui.EnumWindows(_pcb, pid)
-            if result[0]: break
-    except Exception: pass
-
-    return result[0]
 
 def _apply_frame_strip(hwnd):
     """Strip WS_CAPTION and WS_SYSMENU. Keep WS_THICKFRAME (resize works)."""
@@ -1460,10 +1457,17 @@ def main():
     url = "http://127.0.0.1:7890"
 
     # ── PRIMARY: pywebview with frameless=True ──
-    # Drag is handled by -webkit-app-region:drag CSS (native, zero lag)
-    # AOT via on_top= property which pywebview actually owns and enforces
     if HAS_WEBVIEW:
         try:
+            # Tell WebView2 to use performance flags before it initializes
+            os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = " ".join([
+                "--disable-background-timer-throttling",
+                "--disable-renderer-backgrounding",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-ipc-flooding-protection",
+                "--disable-gpu-sandbox",
+                "--force-device-scale-factor=1",
+            ])
             global _webview_window
             _webview_window = webview.create_window(
                 title="Fiuxxed's AutoTyper v9.1",
