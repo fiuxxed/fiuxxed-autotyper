@@ -49,9 +49,13 @@
 ### Changed
 - now there will always be a method when using the math scanner
 
+### Added
+- 
+
 
 ### What's next?
 
-- I'm gonna try to fix the lag that happens when dragging the window now but keeping it so it doesn't use the default microsoft edge title bar.
+- Fixing the lag that happens when dragging the window now **BUT** keeping it so it doesn't use the default microsoft edge title bar still.
+- Fixing run.bat always being weird.
 
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
