@@ -42,7 +42,9 @@
 ## March 10, 2026
 
 ### Fixed
-- fixed crashing for no reason
+- fixed run.bat crashing for no reason
+- fixed that annoying default microsoft edge title bar and use our own
+- fixed "always on top" not working
 
 ### Changed
 - now there will always be a method when using the math scanner
