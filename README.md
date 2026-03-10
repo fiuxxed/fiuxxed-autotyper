@@ -25,3 +25,4 @@
 
 🔄 This app is actively updated — always check for the latest release before using.
 
+🔓 Fully open source, small project, but if you find it useful, share it. Just don't skid it and call it yours (Yes im talking to you Epstein.)
