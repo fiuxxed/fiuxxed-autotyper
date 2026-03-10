@@ -1,10 +1,10 @@
-A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
+# A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
 
 <img width="595" height="564" alt="image" src="https://github.com/user-attachments/assets/87d82943-aea7-484b-bd17-8824e59a969f" />
 
 
 
-Features:
+## Features:
 
 ⌨️ AutoType — types any text with configurable WPM, rhythm variance, stutters, typos, thinking pauses, and hotkey triggers
 🔍 AI Scanner — screenshot any window, AI detects every question, checks answers, flags wrong ones with corrections
@@ -15,8 +15,6 @@ Features:
 📋 History — auto-saves all past scans and math solutions, formula library for reuse
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
-Stack: Python · Flask · Groq API (Llama 4 Scout + Llama 3.3) · yt-dlp · pywin32 · pynput · Web Audio API
+## Installation Process: Install Python and make sure it's installed to PATH. Unzip folder. Run install.bat once, then run.bat to launch anddd done! :D 
 
-SETUP: Install Python and make sure it's installed to PATH. Unzip folder. Run install.bat once, then run.bat to launch. Done! :D 
-
-(Requires a free Groq API key.)
+(Requires a free Groq API key (set in settings in-app.))
