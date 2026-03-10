@@ -530,7 +530,7 @@ def ai_math(b64, examine_examples=False):
                 "- answer: the final answer clearly stated\n"
                 "- steps: array of step-by-step solution strings\n"
                 "- explanations: array of plain English explanation per step (SAME length as steps)\n"
-                "- vertical_method: vertical/column layout as multi-line string if applicable (long division, column addition etc). null otherwise\n"
+                "- vertical_method: ALWAYS provide this. Show ONLY equations/calculations as numbered steps, no words. e.g. '1) HL = 1/2(HJ)\\n2) HJ = 2*HL\\n3) HJ = 126'. Never null.\n"
                 "- graph_eq: for ANY plottable function provide 'y=expr'. For geometry problems that can be visualized provide null\n"
                 "- diagram_description: for geometry/diagram problems, describe what to draw (e.g. 'Triangle with angles 97, 28, 55 degrees'). null for pure algebra\n"
                 "- has_graph: true if graph_eq is not null\n"
@@ -623,7 +623,7 @@ def _find_app_hwnd():
     if not HAS_WIN32:
         return None
 
-    TITLE_HINTS   = ("AutoTyper", "Fiuxxed", "127.0.0.1:7890", "localhost:7890")
+    TITLE_HINTS   = ("AutoTyper", "Fiuxxed")
     # Never grab these — they're console/system windows
     SKIP_TITLES   = ("cmd", "command prompt", "powershell", "python", "administrator",
                      "c:\\windows", "conhost", "run_hidden")
@@ -731,23 +731,82 @@ def apply_always_on_top(val):
 
 def _aot_watcher():
     """
-    Background thread — re-applies always_on_top every second.
-    Always re-finds the window instead of trusting a cached handle,
-    so if Edge recreates its window or the handle goes stale we self-correct.
+    Two-pronged always-on-top approach:
+    1. SetWinEventHook — fires INSTANTLY whenever any window becomes foreground,
+       immediately re-asserts topmost on ours before the user even notices
+    2. Polling fallback every 500ms as a safety net
+    This combination is how apps like Task Manager stay on top reliably.
     """
     global _AOT_HWND
     time.sleep(2.5)
+
+    # ── Try to set up a WinEvent hook for instant response ──
+    hooked = False
+    if HAS_WIN32:
+        try:
+            import ctypes.wintypes as wt
+            user32 = ctypes.windll.user32
+
+            EVENT_SYSTEM_FOREGROUND = 0x0003
+            WINEVENT_OUTOFCONTEXT   = 0x0000
+
+            WinEventProc = ctypes.WINFUNCTYPE(
+                None,
+                ctypes.wintypes.HANDLE,  # hWinEventHook
+                ctypes.wintypes.DWORD,   # event
+                ctypes.wintypes.HWND,    # hwnd
+                ctypes.wintypes.LONG,    # idObject
+                ctypes.wintypes.LONG,    # idChild
+                ctypes.wintypes.DWORD,   # dwEventThread
+                ctypes.wintypes.DWORD,   # dwmsEventTime
+            )
+
+            def _on_foreground(hHook, event, hwnd, idObj, idChild, thread, time_ms):
+                try:
+                    if not bool(cfg.get("always_on_top", True)):
+                        return
+                    our = _AOT_HWND or _find_app_hwnd()
+                    if our and hwnd != our:
+                        # Something else just came to front — immediately re-pin ours
+                        ctypes.windll.user32.SetWindowPos(
+                            our, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
+                        )
+                except Exception:
+                    pass
+
+            _proc = WinEventProc(_on_foreground)
+
+            hook = user32.SetWinEventHook(
+                EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
+                None, _proc, 0, 0, WINEVENT_OUTOFCONTEXT
+            )
+
+            if hook:
+                hooked = True
+                # Need a message pump to receive hook callbacks
+                def _pump():
+                    msg = ctypes.wintypes.MSG()
+                    while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) != 0:
+                        user32.TranslateMessage(ctypes.byref(msg))
+                        user32.DispatchMessageW(ctypes.byref(msg))
+                pump_thread = threading.Thread(target=_pump, daemon=True)
+                pump_thread.start()
+        except Exception:
+            hooked = False
+
+    # ── Polling loop — runs regardless of hook, 500ms interval ──
     while True:
         try:
             if bool(cfg.get("always_on_top", True)):
-                # Always re-find — never trust stale cache for AOT
                 hwnd = _find_app_hwnd()
                 if hwnd:
                     _AOT_HWND = hwnd
-                    _set_hwnd_topmost(hwnd, True)
+                    ctypes.windll.user32.SetWindowPos(
+                        hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
+                    )
         except Exception:
             pass
-        time.sleep(1)
+        time.sleep(0.5)
 
 def start_aot_watcher():
     global _aot_thread
@@ -1187,6 +1246,17 @@ def api_window_close():
 # ══════════════════════════════════════════════════════════════════════
 import socket, subprocess
 
+def _kill_port(port):
+    """Kill any process already holding our port so restart always works."""
+    try:
+        for proc in psutil.process_iter(["pid","name","connections"]):
+            try:
+                for conn in (proc.info.get("connections") or []):
+                    if hasattr(conn, "laddr") and conn.laddr.port == port:
+                        proc.kill(); time.sleep(0.3)
+            except Exception: pass
+    except Exception: pass
+
 def _port_open(port):
     try: s = socket.create_connection(("127.0.0.1",port),timeout=0.3); s.close(); return True
     except Exception: return False
@@ -1233,98 +1303,129 @@ def _launch_app_window(url):
             "--disable-background-networking", "--disable-sync",
             "--password-store=basic",
         ])
-        # Strip the native titlebar via SetWindowLong after window appears
+        # Store PID so window finder can target it precisely
+        global _edge_pid
+        _edge_pid = proc.pid
         threading.Thread(target=_strip_titlebar_later, daemon=True).start()
         return proc
     except Exception as e: print("Browser launch error: "+str(e)); return None
 
-# Win32 constants for stripping the titlebar
-GWL_STYLE      = -16
-GWL_EXSTYLE    = -20
-WS_CAPTION     = 0x00C00000  # titlebar (WS_BORDER | WS_DLGFRAME)
-WS_THICKFRAME  = 0x00040000  # resizable border — DO NOT REMOVE (breaks resize)
-WS_BORDER      = 0x00800000
-WS_DLGFRAME    = 0x00400000
-WS_SYSMENU     = 0x00080000  # system menu (also part of caption area)
-WS_EX_TOOLWINDOW = 0x00000080  # hides from taskbar, removes caption chrome
+# Win32 constants
+GWL_STYLE     = -16
+WS_CAPTION    = 0x00C00000   # titlebar — remove this
+WS_THICKFRAME = 0x00040000   # resize border — KEEP THIS
+WS_SYSMENU    = 0x00080000   # system menu — remove this
+SWP_FRAMECHANGED = 0x0020
+
+# _edge_pid: PID of the Edge process we launched — most reliable finder anchor
+_edge_pid = None
+
+def _find_app_hwnd():
+    """Find our Edge window. Uses PID if available, title scan as fallback."""
+    if not HAS_WIN32:
+        return None
+
+    result = [None]
+
+    # Primary: match by the exact PID we launched
+    if _edge_pid:
+        def pid_cb(hwnd, _):
+            if result[0]: return
+            if not ctypes.windll.user32.IsWindowVisible(hwnd): return
+            try:
+                _, wpid = win32process.GetWindowThreadProcessId(hwnd)
+                if wpid == _edge_pid:
+                    # Make sure it has a title and reasonable size
+                    title = win32gui.GetWindowText(hwnd)
+                    if not title: return
+                    try:
+                        rect = win32gui.GetWindowRect(hwnd)
+                        w = rect[2] - rect[0]
+                        h = rect[3] - rect[1]
+                        if w > 200 and h > 200:
+                            result[0] = hwnd
+                    except Exception:
+                        result[0] = hwnd
+            except Exception: pass
+        try:
+            win32gui.EnumWindows(pid_cb, None)
+        except Exception: pass
+        if result[0]:
+            return result[0]
+
+    # Fallback: scan all Edge/Chrome processes that have our port in cmdline
+    try:
+        for proc in psutil.process_iter(["pid","name","cmdline"]):
+            pname = (proc.info.get("name") or "").lower()
+            if "edge" not in pname and "chrome" not in pname:
+                continue
+            cmdline = " ".join(proc.info.get("cmdline") or [])
+            if "7890" not in cmdline:
+                continue
+            pid = proc.info["pid"]
+            def _pcb(hwnd, _pid):
+                if result[0]: return
+                if not ctypes.windll.user32.IsWindowVisible(hwnd): return
+                try:
+                    _, wpid = win32process.GetWindowThreadProcessId(hwnd)
+                    if wpid == _pid and win32gui.GetWindowText(hwnd):
+                        result[0] = hwnd
+                except Exception: pass
+            win32gui.EnumWindows(_pcb, pid)
+            if result[0]: break
+    except Exception: pass
+
+    return result[0]
 
 def _apply_frame_strip(hwnd):
-    """
-    Remove WS_CAPTION (titlebar) only — keep WS_THICKFRAME (resize border).
-    Do NOT set WS_EX_TOOLWINDOW — that hides the app from the taskbar.
-    """
-    SWP_FRAMECHANGED = 0x0020
+    """Strip WS_CAPTION and WS_SYSMENU. Keep WS_THICKFRAME (resize works)."""
     try:
-        style     = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
         new_style = style & ~WS_CAPTION & ~WS_SYSMENU
-        if new_style == style:
-            return False  # already stripped, nothing to do
         ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
         ctypes.windll.user32.SetWindowPos(
             hwnd, 0, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED
         )
-        return True
-    except Exception:
-        return False
-
-_strip_done = False   # becomes True once we've successfully stripped
+    except Exception: pass
 
 def _strip_titlebar_later():
     """
-    Persistent loop that:
-    1. Waits for the Edge window to appear
-    2. Strips the native titlebar
-    3. Keeps re-stripping every 500ms for the first 10s (Edge redraws its
-       frame after page-load, which puts the bar back — we catch that)
-    4. Then checks every 3s forever in case the window was recreated
+    Wait for Edge window then strip titlebar + apply AOT.
+    Re-applies every 400ms for 15s (catches Edge redrawing frame after page load),
+    then every 2s forever.
     """
-    global _AOT_HWND, _strip_done
+    global _AOT_HWND
     if not HAS_WIN32:
         return
 
-    # Phase 1: wait for window (up to 15s)
-    deadline = time.time() + 15
+    # Wait up to 20s for window to appear
     hwnd = None
+    deadline = time.time() + 20
     while time.time() < deadline:
         hwnd = _find_app_hwnd()
         if hwnd:
             break
-        time.sleep(0.3)
+        time.sleep(0.25)
 
     if not hwnd:
         return
 
     _AOT_HWND = hwnd
 
-    # Phase 2: aggressively re-strip for first 12 seconds (catches Edge redraw)
-    strip_deadline = time.time() + 12
-    while time.time() < strip_deadline:
-        try:
-            cur_hwnd = _find_app_hwnd() or hwnd
-            if cur_hwnd:
-                _AOT_HWND = cur_hwnd
-                _apply_frame_strip(cur_hwnd)
-                on_top = bool(cfg.get("always_on_top", True))
-                _set_hwnd_topmost(cur_hwnd, on_top)
-        except Exception:
-            pass
-        time.sleep(0.5)
-
-    _strip_done = True
-
-    # Phase 3: periodic maintenance forever
+    # Aggressively re-strip for 15s to catch Edge's post-load frame redraw
+    aggressive_until = time.time() + 15
     while True:
         try:
-            cur_hwnd = _find_app_hwnd()
-            if cur_hwnd:
-                _AOT_HWND = cur_hwnd
-                _apply_frame_strip(cur_hwnd)
-                on_top = bool(cfg.get("always_on_top", True))
-                _set_hwnd_topmost(cur_hwnd, on_top)
-        except Exception:
-            pass
-        time.sleep(3)
+            hwnd = _find_app_hwnd() or _AOT_HWND
+            if hwnd:
+                _AOT_HWND = hwnd
+                _apply_frame_strip(hwnd)
+                if bool(cfg.get("always_on_top", True)):
+                    _set_hwnd_topmost(hwnd, True)
+        except Exception: pass
+        interval = 0.4 if time.time() < aggressive_until else 2.0
+        time.sleep(interval)
 
 def _keep_alive(proc=None):
     """Keep the process alive until the browser window closes. No tkinter needed."""
@@ -1343,6 +1444,7 @@ def _keep_alive(proc=None):
         stop_evt.wait()  # wait forever (fallback browser mode)
 
 def main():
+    _kill_port(7890)       # clear port from any crashed previous instance
     start_hotkeys()
     start_aot_watcher()   # always-on-top background watcher
     flask_thread = threading.Thread(target=run_flask, daemon=True); flask_thread.start()

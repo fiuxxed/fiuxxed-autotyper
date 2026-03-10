@@ -1,173 +1,168 @@
 @echo off
-title Fiuxxed AutoTyper - Installer
+title Fiuxxed's AutoTyper v9 - Installer
 cd /d "%~dp0"
+color 0A
 
 echo.
 echo  =====================================================
-echo   Fiuxxed's AutoTyper v8  -  Installer
+echo   Fiuxxed's AutoTyper v9  --  AI Edition
+echo   Installer
 echo  =====================================================
 echo.
 
-:: -- Find Python --------------------------------------
+:: -------------------------------------------------------
+:: Find Python
+:: -------------------------------------------------------
 set PYTHON=
 
 py --version >nul 2>&1
-if not errorlevel 1 set PYTHON=py
+if not errorlevel 1 (set PYTHON=py) & goto :found_python
 
-if "%PYTHON%"=="" (
-    python --version >nul 2>&1
-    if not errorlevel 1 set PYTHON=python
-)
+python --version >nul 2>&1
+if not errorlevel 1 (set PYTHON=python) & goto :found_python
 
-if "%PYTHON%"=="" (
-    python3 --version >nul 2>&1
-    if not errorlevel 1 set PYTHON=python3
-)
+python3 --version >nul 2>&1
+if not errorlevel 1 (set PYTHON=python3) & goto :found_python
 
-if "%PYTHON%"=="" (
-    echo.
-    echo  ERROR: Python was not found.
-    echo.
-    echo  Install Python 3.11 from https://www.python.org/downloads/
-    echo  IMPORTANT: check "Add Python to PATH" during install.
-    echo.
-    pause
-    exit /b 1
-)
+echo.
+echo  [ERROR] Python was not found on this machine.
+echo.
+echo  Download Python 3.11 or newer from:
+echo    https://www.python.org/downloads/
+echo.
+echo  IMPORTANT: Check "Add Python to PATH" during install.
+echo.
+pause
+exit /b 1
 
-echo  Python found: %PYTHON%
+:found_python
+echo  Python found:
 %PYTHON% --version
 echo.
 
-:: -- Upgrade pip first --------------------------------
+:: -------------------------------------------------------
+:: Upgrade pip silently
+:: -------------------------------------------------------
 echo  Upgrading pip...
-%PYTHON% -m pip install --upgrade pip --no-warn-script-location
+%PYTHON% -m pip install --upgrade pip --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-:: -- Core packages ------------------------------------
-echo  [1/8] Flask (web server backend)...
-%PYTHON% -m pip install flask --upgrade --no-warn-script-location
+:: -------------------------------------------------------
+:: Core packages
+:: -------------------------------------------------------
+echo  [1/9] Flask  (web server)...
+%PYTHON% -m pip install flask --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [2/8] pynput (keyboard hotkeys and typing engine)...
-%PYTHON% -m pip install pynput --upgrade --no-warn-script-location
+echo  [2/9] pynput  (hotkeys + typing engine)...
+%PYTHON% -m pip install pynput --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [4/8] Groq AI SDK...
-%PYTHON% -m pip install groq --upgrade --no-warn-script-location
+echo  [3/9] Groq AI SDK...
+%PYTHON% -m pip install groq --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [5/8] mss and Pillow (screenshots and image processing)...
-%PYTHON% -m pip install mss Pillow --upgrade --no-warn-script-location
+echo  [4/9] mss + Pillow  (screenshots)...
+%PYTHON% -m pip install mss Pillow --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [6/8] pywin32 and psutil (Windows window detection)...
-%PYTHON% -m pip install pywin32 psutil --upgrade --no-warn-script-location
-echo  Running pywin32 post-install...
-%PYTHON% -c "import sys, os; s=os.path.join(sys.exec_prefix,'Scripts','pywin32_postinstall.py'); os.system(sys.executable+' '+s+' -install') if os.path.exists(s) else None" >nul 2>&1
+echo  [5/9] pywin32 + psutil  (window control - NEEDED for titlebar + always-on-top)...
+%PYTHON% -m pip install pywin32 psutil --upgrade --quiet --no-warn-script-location
+echo  Registering pywin32 DLLs (required for win32gui to work)...
+%PYTHON% -c "import sys, os, subprocess; script = os.path.join(sys.exec_prefix, 'Scripts', 'pywin32_postinstall.py'); subprocess.call([sys.executable, script, '-install']) if os.path.exists(script) else None"
+echo  Done.
 echo.
 
-echo  [7/8] matplotlib and numpy (math graphs)...
-%PYTHON% -m pip install matplotlib numpy --upgrade --no-warn-script-location
+echo  [6/9] matplotlib + numpy  (math graphs)...
+%PYTHON% -m pip install matplotlib numpy --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [8/9] yt-dlp (YouTube music search)...
-%PYTHON% -m pip install yt-dlp --upgrade --no-warn-script-location
+echo  [7/9] yt-dlp  (YouTube music search)...
+%PYTHON% -m pip install yt-dlp --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  [9/9] SpeechRecognition and PyAudio (voice tab)...
-%PYTHON% -m pip install SpeechRecognition --upgrade --no-warn-script-location
+echo  [8/9] SpeechRecognition  (voice tab)...
+%PYTHON% -m pip install SpeechRecognition --upgrade --quiet --no-warn-script-location
+echo  Done.
 echo.
 
-echo  Installing PyAudio (pre-built wheel, no compiler needed)...
-%PYTHON% -m pip install PyAudio --only-binary :all: --no-warn-script-location
-if not errorlevel 1 goto :pyaudio_ok
+echo  [9/9] PyAudio  (microphone input)...
+%PYTHON% -m pip install PyAudio --only-binary :all: --quiet --no-warn-script-location
+if not errorlevel 1 goto :audio_ok
 
-:: PyAudio binary not on PyPI for this Python version - use unofficial wheels
-echo  PyPI binary not found. Trying unofficial pre-built wheels...
-%PYTHON% -c "import sys,urllib.request,os,subprocess; v=sys.version_info; tag='cp%d%d'%(v.major,v.minor); url='https://github.com/nicktindall/cyclon.p2p-rtc-client/raw/master/pyaudio/PyAudio-0.2.11-'+tag+'-'+tag+'-win_amd64.whl'; print('Trying: '+url)" >nul 2>&1
+echo  PyAudio wheel not available, trying sounddevice...
+%PYTHON% -m pip install sounddevice --upgrade --quiet --no-warn-script-location
+if not errorlevel 1 goto :audio_ok
 
-:: Use Python itself to detect version and download the right wheel
-%PYTHON% -c ^
-"import sys,subprocess,os,urllib.request,tempfile ^
-;v=sys.version_info ^
-;tag='cp%d%d'%%(v.major,v.minor) ^
-;urls=[ ^
-    'https://files.pythonhosted.org/packages/pypi/p/pyaudio/PyAudio-0.2.14-'+tag+'-'+tag+'-win_amd64.whl', ^
-    'https://download.lfd.uci.edu/pythonlibs/archived/PyAudio-0.2.11-'+tag+'-'+tag+'-win_amd64.whl' ^
-] ^
-;print('Python '+str(v.major)+'.'+str(v.minor)+' detected, looking for PyAudio wheel...')" >nul 2>&1
+echo  NOTE: No audio backend installed. Voice tab needs PyAudio or sounddevice.
+goto :audio_done
 
-%PYTHON% -m pip install PyAudio --pre --no-warn-script-location
-if not errorlevel 1 goto :pyaudio_ok
+:audio_ok
+echo  Done.
 
-:: Last attempt - sounddevice is a drop-in alternative that always has wheels
-echo  Trying sounddevice as PyAudio alternative (better Python 3.14 support)...
-%PYTHON% -m pip install sounddevice --upgrade --no-warn-script-location
-if not errorlevel 1 (
-    echo  sounddevice installed OK - voice tab will use it instead of PyAudio.
-    goto :pyaudio_ok
+:audio_done
+echo.
+
+:: -------------------------------------------------------
+:: Verify
+:: -------------------------------------------------------
+echo  =====================================================
+echo   Verifying installs...
+echo  =====================================================
+echo.
+
+%PYTHON% -c "import flask; print('  [OK]  flask')" 2>nul
+if errorlevel 1 echo  [FAIL] flask - run install.bat again
+
+%PYTHON% -c "import pynput; print('  [OK]  pynput')" 2>nul
+if errorlevel 1 echo  [FAIL] pynput - run install.bat again
+
+%PYTHON% -c "import groq; print('  [OK]  groq')" 2>nul
+if errorlevel 1 echo  [FAIL] groq - run install.bat again
+
+%PYTHON% -c "import mss; print('  [OK]  mss')" 2>nul
+if errorlevel 1 echo  [FAIL] mss - run install.bat again
+
+%PYTHON% -c "import PIL; print('  [OK]  Pillow')" 2>nul
+if errorlevel 1 echo  [FAIL] Pillow - run install.bat again
+
+%PYTHON% -c "import win32gui; print('  [OK]  pywin32  ^(titlebar + always-on-top active^)')" 2>nul
+if errorlevel 1 echo  [FAIL] pywin32 - titlebar hiding + always-on-top will NOT work - rerun install.bat
+
+%PYTHON% -c "import psutil; print('  [OK]  psutil')" 2>nul
+if errorlevel 1 echo  [WARN] psutil missing
+
+%PYTHON% -c "import matplotlib; print('  [OK]  matplotlib')" 2>nul
+if errorlevel 1 echo  [WARN] matplotlib missing - math graphs disabled
+
+%PYTHON% -c "import numpy; print('  [OK]  numpy')" 2>nul
+if errorlevel 1 echo  [WARN] numpy missing - math graphs disabled
+
+%PYTHON% -c "import yt_dlp; print('  [OK]  yt-dlp')" 2>nul
+if errorlevel 1 echo  [WARN] yt-dlp missing - YouTube search less reliable
+
+%PYTHON% -c "import speech_recognition; print('  [OK]  SpeechRecognition')" 2>nul
+if errorlevel 1 echo  [WARN] SpeechRecognition missing - voice tab disabled
+
+%PYTHON% -c "import pyaudio; print('  [OK]  PyAudio')" 2>nul
+if errorlevel 1 (
+    %PYTHON% -c "import sounddevice; print('  [OK]  sounddevice')" 2>nul
+    if errorlevel 1 echo  [WARN] no audio backend - mic input disabled
 )
 
 echo.
-echo  NOTE: PyAudio could not install on Python 3.14 (no wheel available yet).
-echo  Voice recognition tab will still show but microphone input needs PyAudio.
-echo  All other features work perfectly without it.
-echo  When PyAudio adds Python 3.14 support, just run install.bat again.
-echo.
-goto :pyaudio_done
-
-:pyaudio_ok
-echo  PyAudio or audio backend installed OK.
-
-:pyaudio_done
-echo.
-
-:: -- Verify --------------------------------------------
 echo  =====================================================
-echo   Checking installs...
-echo  =====================================================
-echo.
-
-%PYTHON% -c "import flask; print('  OK  flask')"
-if errorlevel 1 echo  FAIL flask
-
-%PYTHON% -c "import pynput; print('  OK  pynput')"
-if errorlevel 1 echo  FAIL pynput
-
-%PYTHON% -c "import groq; print('  OK  groq')"
-if errorlevel 1 echo  FAIL groq
-
-%PYTHON% -c "import mss; print('  OK  mss')"
-if errorlevel 1 echo  FAIL mss
-
-%PYTHON% -c "import PIL; print('  OK  Pillow')"
-if errorlevel 1 echo  FAIL Pillow
-
-%PYTHON% -c "import win32gui; print('  OK  pywin32')"
-if errorlevel 1 echo  WARN pywin32
-
-%PYTHON% -c "import psutil; print('  OK  psutil')"
-if errorlevel 1 echo  WARN psutil
-
-%PYTHON% -c "import matplotlib; print('  OK  matplotlib')"
-if errorlevel 1 echo  WARN matplotlib
-
-%PYTHON% -c "import numpy; print('  OK  numpy')"
-if errorlevel 1 echo  WARN numpy
-
-%PYTHON% -c "import speech_recognition; print('  OK  SpeechRecognition')"
-
-%PYTHON% -c "import yt_dlp; print('  OK  yt-dlp')"
-if errorlevel 1 echo  WARN yt-dlp
-if errorlevel 1 echo  WARN SpeechRecognition
-
-echo.
-echo  =====================================================
-echo   Done! Double-click run.bat to launch the app.
+echo   Done! Run run.bat to launch.
 echo  =====================================================
 echo.
 echo  Get your free Groq API key at: https://console.groq.com
-echo  Paste it in the app under Settings (gear icon).
+echo  Paste it in the app under Settings ^(gear icon^).
 echo.
 pause
