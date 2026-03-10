@@ -1,6 +1,7 @@
 A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
 
-<img width="597" height="570" alt="image" src="https://github.com/user-attachments/assets/03e9b241-aade-4b41-861d-91efc150c5ae" />
+<img width="595" height="564" alt="image" src="https://github.com/user-attachments/assets/87d82943-aea7-484b-bd17-8824e59a969f" />
+
 
 
 Features:
