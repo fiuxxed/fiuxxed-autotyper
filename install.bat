@@ -78,22 +78,32 @@ echo  Registering pywin32 DLLs (required for win32gui to work)...
 echo  Done.
 echo.
 
-echo  [6/9] matplotlib + numpy  (math graphs)...
+echo  [6/10] pywebview  (app window fallback)...
+%PYTHON% -m pip install pywebview --upgrade --quiet --no-warn-script-location
+echo  Done.
+echo.
+
+echo  [6b] tkinterweb  (embedded browser in tkinter)...
+%PYTHON% -m pip install tkinterweb --upgrade --quiet --no-warn-script-location
+echo  Done.
+echo.
+
+echo  [7/10] matplotlib + numpy  (math graphs)...
 %PYTHON% -m pip install matplotlib numpy --upgrade --quiet --no-warn-script-location
 echo  Done.
 echo.
 
-echo  [7/9] yt-dlp  (YouTube music search)...
+echo  [8/10] yt-dlp  (YouTube music search)...
 %PYTHON% -m pip install yt-dlp --upgrade --quiet --no-warn-script-location
 echo  Done.
 echo.
 
-echo  [8/9] SpeechRecognition  (voice tab)...
+echo  [9/10] SpeechRecognition  (voice tab)...
 %PYTHON% -m pip install SpeechRecognition --upgrade --quiet --no-warn-script-location
 echo  Done.
 echo.
 
-echo  [9/9] PyAudio  (microphone input)...
+echo  [10/10] PyAudio  (microphone input)...
 %PYTHON% -m pip install PyAudio --only-binary :all: --quiet --no-warn-script-location
 if not errorlevel 1 goto :audio_ok
 
@@ -147,6 +157,9 @@ if errorlevel 1 echo  [WARN] numpy missing - math graphs disabled
 
 %PYTHON% -c "import yt_dlp; print('  [OK]  yt-dlp')" 2>nul
 if errorlevel 1 echo  [WARN] yt-dlp missing - YouTube search less reliable
+
+%PYTHON% -c "import webview; print('  [OK]  pywebview  (AOT + frameless window)')" 2>nul
+if errorlevel 1 echo  [FAIL] pywebview - always-on-top and frameless will NOT work
 
 %PYTHON% -c "import speech_recognition; print('  [OK]  SpeechRecognition')" 2>nul
 if errorlevel 1 echo  [WARN] SpeechRecognition missing - voice tab disabled

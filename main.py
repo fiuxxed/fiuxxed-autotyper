@@ -1,5 +1,5 @@
 # ══════════════════════════════════════════════════════════════════════
-#  Fiuxxed's AutoTyper v9.0  —  main.py
+#  Fiuxxed's AutoTyper v9.1  —  main.py
 # ══════════════════════════════════════════════════════════════════════
 import threading, time, random, json, os, sys, re, io, base64, traceback, ctypes
 
@@ -794,10 +794,18 @@ def _aot_watcher():
         except Exception:
             hooked = False
 
-    # ── Polling loop — runs regardless of hook, 500ms interval ──
+    # ── Polling loop ──
     while True:
         try:
-            if bool(cfg.get("always_on_top", True)):
+            val = bool(cfg.get("always_on_top", True))
+            # pywebview path — just set the property, it owns the window
+            if _webview_window:
+                try:
+                    _webview_window.on_top = val
+                except Exception:
+                    pass
+            # win32 path for Edge fallback
+            elif HAS_WIN32 and val:
                 hwnd = _find_app_hwnd()
                 if hwnd:
                     _AOT_HWND = hwnd
@@ -1230,15 +1238,8 @@ def api_window_minimize():
 
 @app_flask.route("/api/window/close", methods=["POST"])
 def api_window_close():
-    if not HAS_WIN32: return jsonify({"ok": False})
-    hwnd = _AOT_HWND or _find_app_hwnd()
-    if hwnd:
-        try:
-            ctypes.windll.user32.PostMessageW(hwnd, WM_SYSCOMMAND, SC_CLOSE, 0)
-        except Exception:
-            pass
-    # Also shut down Flask so the process fully exits
-    threading.Thread(target=lambda: (time.sleep(0.3), os._exit(0)), daemon=True).start()
+    # Instant exit — don't wait for pywebview/Edge cleanup, just die
+    threading.Thread(target=lambda: (time.sleep(0.15), os._exit(0)), daemon=True).start()
     return jsonify({"ok": True})
 
 # ══════════════════════════════════════════════════════════════════════
@@ -1302,6 +1303,13 @@ def _launch_app_window(url):
             "--disable-extensions", "--disable-default-apps",
             "--disable-background-networking", "--disable-sync",
             "--password-store=basic",
+            # Performance flags — reduce compositor overhead for snappier window behavior
+            "--disable-background-timer-throttling",
+            "--disable-renderer-backgrounding",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-ipc-flooding-protection",
+            "--enable-features=VaapiVideoDecoder",
+            "--force-device-scale-factor=1",
         ])
         # Store PID so window finder can target it precisely
         global _edge_pid
@@ -1443,23 +1451,42 @@ def _keep_alive(proc=None):
     else:
         stop_evt.wait()  # wait forever (fallback browser mode)
 
+
 def main():
-    _kill_port(7890)       # clear port from any crashed previous instance
+    _kill_port(7890)
     start_hotkeys()
-    start_aot_watcher()   # always-on-top background watcher
     flask_thread = threading.Thread(target=run_flask, daemon=True); flask_thread.start()
     if not _wait_for_flask(): print("ERROR: Flask server failed to start."); sys.exit(1)
     url = "http://127.0.0.1:7890"
-    proc = _launch_app_window(url)
-    if proc: _keep_alive(proc); return
+
+    # ── PRIMARY: pywebview with frameless=True ──
+    # Drag is handled by -webkit-app-region:drag CSS (native, zero lag)
+    # AOT via on_top= property which pywebview actually owns and enforces
     if HAS_WEBVIEW:
         try:
             global _webview_window
-            _webview_window = webview.create_window(title="Fiuxxed's AutoTyper", url=url,
-                width=600, height=940, min_size=(420,600), resizable=True,
-                on_top=bool(cfg.get("always_on_top",True)), background_color="#07070e")
-            webview.start(debug=False); return
-        except Exception as e: print("pywebview error: "+str(e))
+            _webview_window = webview.create_window(
+                title="Fiuxxed's AutoTyper v9.1",
+                url=url,
+                width=620, height=960,
+                min_size=(420, 600),
+                resizable=True,
+                frameless=True,
+                on_top=bool(cfg.get("always_on_top", True)),
+                background_color="#07070e",
+            )
+            # Keep AOT watcher running so live toggle works
+            start_aot_watcher()
+            webview.start(debug=False)
+            return
+        except Exception as e:
+            print("pywebview error:", e)
+
+    # ── FALLBACK: Edge app mode ──
+    start_aot_watcher()
+    proc = _launch_app_window(url)
+    if proc: _keep_alive(proc); return
+
     import webbrowser; print("Opening in browser: "+url); webbrowser.open(url); _keep_alive()
 
 if __name__ == "__main__":
