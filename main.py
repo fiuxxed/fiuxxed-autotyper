@@ -476,14 +476,18 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
                 "You are scanning a student's assignment screenshot. Read the ENTIRE screen carefully.\n\n"
 
                 "── GOOGLE DOCS / WORD / WORKSHEET LAYOUTS ──\n"
-                "These assignments often have a TWO-COLUMN layout:\n"
-                "  LEFT column: reading passage, instructions, or source material\n"
-                "  RIGHT column (or below): answer boxes, blanks, or response fields\n"
-                "CRITICAL: The LEFT side is the SOURCE to read and understand. The RIGHT side contains the QUESTIONS/BLANKS to fill in.\n"
-                "- If you see 'Main Idea', 'Answer:', 'Summary:', 'Response:', 'Key Details:', 'Fill in:', or any labeled blank field → that IS the question to answer\n"
-                "- Use the reading passage/content on the LEFT to GENERATE the correct answer for the blank on the RIGHT\n"
-                "- A blinking cursor '|' or empty line after 'Answer:' means it is unanswered\n"
-                "- The Google Docs interface has a white document area with a gray background outside — the document content is what matters\n\n"
+                "These assignments often have a TWO-COLUMN or split layout:\n"
+                "  SOURCE SIDE: reading passage, article, instructions — this is INFORMATION, not a question\n"
+                "  ANSWER SIDE: labeled fields like 'Answer:', 'Main Idea:', 'Summary:', 'Key Details:' followed by a blank, cursor '|', or empty space\n\n"
+                "CRITICAL RULE: 'Answer: |' or 'Answer: ___' is ALWAYS an unanswered question.\n"
+                "  → Find the CLOSEST piece of source text (heading, paragraph, passage) that the answer field relates to\n"
+                "  → Generate a proper answer FROM that source content — do NOT copy the whole passage\n"
+                "  → For 'Main Idea': write a 1-2 sentence summary of the MAIN POINT of the nearby passage\n"
+                "  → For 'Summary': condense the nearby passage into 2-3 sentences\n"
+                "  → For 'Key Details': list the most important specific facts from the passage\n"
+                "  → A cursor '|' after a label = definitely unanswered — answered=false\n"
+                "  → The Google Docs toolbar/menu bar at the top is NOT content — ignore it\n"
+                "  → The gray area outside the white document page is NOT content — ignore it\n\n"
 
                 "── HOW TO FIND ALL QUESTIONS ──\n"
                 "- Numbered items: '1.', '2.', 'Q1', 'a)', 'b)' — all questions\n"
@@ -1456,10 +1460,12 @@ def main():
     if not _wait_for_flask(): print("ERROR: Flask server failed to start."); sys.exit(1)
     url = "http://127.0.0.1:7890"
 
-    # ── PRIMARY: pywebview with frameless=True ──
+    # ── PRIMARY: pywebview — framed window, Win32 titlebar stripped after launch ──
+    # frameless=True makes the ENTIRE WebView2 surface draggable at OS level —
+    # CSS no-drag cannot override it. So we use frameless=False and strip the
+    # Win32 titlebar ourselves, same as Edge app mode. CSS then works perfectly.
     if HAS_WEBVIEW:
         try:
-            # Tell WebView2 to use performance flags before it initializes
             os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = " ".join([
                 "--disable-background-timer-throttling",
                 "--disable-renderer-backgrounding",
@@ -1475,13 +1481,32 @@ def main():
                 width=620, height=960,
                 min_size=(420, 600),
                 resizable=True,
-                frameless=True,
+                frameless=False,
                 on_top=bool(cfg.get("always_on_top", True)),
                 background_color="#07070e",
             )
-            # Keep AOT watcher running so live toggle works
             start_aot_watcher()
-            webview.start(debug=False)
+
+            class WVApi:
+                def drag(self):
+                    hwnd = _AOT_HWND or _find_app_hwnd()
+                    if hwnd and HAS_WIN32:
+                        ctypes.windll.user32.ReleaseCapture()
+                        ctypes.windll.user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
+                def minimize(self):
+                    hwnd = _AOT_HWND or _find_app_hwnd()
+                    if hwnd and HAS_WIN32:
+                        ctypes.windll.user32.ShowWindow(hwnd, 6)
+                def close(self):
+                    threading.Thread(target=lambda: (time.sleep(0.1), os._exit(0)), daemon=True).start()
+
+            def _on_loaded():
+                # Page loaded — strip the titlebar now and keep re-stripping
+                # pywebview redraws the Win32 frame multiple times during load
+                threading.Thread(target=_strip_titlebar_later, daemon=True).start()
+
+            _webview_window.events.loaded += _on_loaded
+            webview.start(debug=False, js_api=WVApi())
             return
         except Exception as e:
             print("pywebview error:", e)
