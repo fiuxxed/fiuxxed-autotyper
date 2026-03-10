@@ -1,6 +1,7 @@
 A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
 
-<img width="604" height="933" alt="image" src="https://github.com/user-attachments/assets/59beae53-41be-41e8-a69e-85e75095780f" />
+<img width="597" height="570" alt="image" src="https://github.com/user-attachments/assets/03e9b241-aade-4b41-861d-91efc150c5ae" />
+
 
 Features:
 
@@ -14,4 +15,5 @@ Features:
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
 Stack: Python · Flask · Groq API (Llama 4 Scout + Llama 3.3) · yt-dlp · pywin32 · pynput · Web Audio API
-Setup: Run install.bat once, then run.bat to launch. Requires a free Groq API key.
+
+SETUP: Run install.bat once, then run.bat to launch. Requires a free Groq API key.
