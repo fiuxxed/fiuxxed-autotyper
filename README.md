@@ -17,8 +17,8 @@
 
 ## Installation Process: 
 1. Install Python and make sure it's installed to PATH. 
-- Windows Install: https://www.python.org/ftp/python/3.14.3/python-3.14.3-amd64.exe(Python Windows)
-- Mac Install: https://www.python.org/ftp/python/3.14.3/python-3.14.3-macos11.pkg(Python Mac)
+- Windows Install: (https://www.python.org/ftp/python/3.14.3/python-3.14.3-amd64.exe)[Python Windows]
+- Mac Install: (https://www.python.org/ftp/python/3.14.3/python-3.14.3-macos11.pkg)[Python Mac]
 2. Tap the green "Code" Button and Download ZIP. 
 3. Unzip that folder (recommended to use WinRAR or 7zip).
 4. Run install.bat once, then run.bat to launch anddd done! :D 
