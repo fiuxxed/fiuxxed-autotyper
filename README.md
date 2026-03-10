@@ -15,7 +15,11 @@
 📋 History — auto-saves all past scans and math solutions, formula library for reuse
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
-## Installation Process: Install Python and make sure it's installed to PATH. Tap the green "Code" Button and Download ZIP. Unzip that folder (recommended to use WinRAR or 7zip). Run install.bat once, then run.bat to launch anddd done! :D 
+## Installation Process: 
+1. Install Python and make sure it's installed to PATH. 
+2. Tap the green "Code" Button and Download ZIP. 
+3. Unzip that folder (recommended to use WinRAR or 7zip). 
+4.Run install.bat once, then run.bat to launch anddd done! :D 
 
 (Requires a free Groq API key (set in settings in-app.))
 
