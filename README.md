@@ -45,17 +45,15 @@
 - fixed run.bat crashing for no reason
 - fixed that annoying default microsoft edge title bar and use our own
 - fixed "always on top" not working
+- fixed the lag that happens when dragging the window
 
 ### Changed
 - now there will always be a method when using the math scanner
+- made the scanner work better, especially for google docs
 
 ### Added
-- 
-
-
-### What's next?
-
-- Fixing the lag that happens when dragging the window now **BUT** keeping it so it doesn't use the default microsoft edge title bar still.
-- Fixing run.bat always being weird.
+- an "extra context" button for the Scan tab
+- a humanzier for Scan and Q&A tab
+- a "Shorter" and "Longer" button for the Scan tab
 
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
