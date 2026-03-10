@@ -32,3 +32,17 @@
 🔄 This app is actively updated — always check for the latest release before using.
 
 🔓 Fully open source, small project, but if you find it useful, share it. Just don't skid it and call it yours (Yes im talking to you Epstein.)
+
+
+
+# Changelog
+
+## March 10, 2026
+
+### Fixed
+- fixed crashing for no reason
+
+### Changed
+- now there will always be a method when using the math scanner
+
+will fix WAY more bugs very soon don't worry guys im aware of lots of them
