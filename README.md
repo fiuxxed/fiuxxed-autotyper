@@ -3,6 +3,8 @@
 
 <img width="595" height="564" alt="image" src="https://github.com/user-attachments/assets/87d82943-aea7-484b-bd17-8824e59a969f" />
 
+(Requires a free Groq API key (set in settings in-app.))
+
 
 
 ## Features:
@@ -30,9 +32,7 @@
 2. **If you do, delete the old zip and **ALSO** it's unzipped counterpart.** (or keep the old one idgaf)
 3.**And then just follow step 3-5 from the Installation Process.** No you do not have to run the install.bat again UNLESS you deleted python or something.
 
-(Requires a free Groq API key (set in settings in-app.))
-
-
+# IMPORTANT ❗
 
 ⚠️ This project is in beta — bugs are expected. If you find one, please report it in the Issues tab.
 
