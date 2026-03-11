@@ -18,6 +18,14 @@
 📋 History — auto-saves all past scans and math solutions, formula library for reuse
 🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
 
+# Important ❗
+
+⚠️ This project is in beta — bugs are expected. If you find one, please report it in the Issues tab.
+
+🔄 This app is actively updated — always check for the latest release before using again. There is some cool stuff being added so be in check !
+
+🔓 Fully open source, small project, but if you find it useful, share it. Just don't skid it and call it yours (Yes im talking to you Epstein.)
+
 # Installation Process: 
 1. **Delete any old python installations. Install Python 3.11 and make sure it's installed to PATH (You will see it at the bottom when opening the installion manager.)**
 - Windows Install: [Python Windows](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
@@ -31,16 +39,6 @@
 1. **Wait until you see any recently changed major files in the github**
 2. **If you do, delete the old zip and **ALSO** it's unzipped counterpart.** (or keep the old one idgaf)
 3.**And then just follow step 3-5 from the Installation Process.** No you do not have to run the install.bat again UNLESS you deleted python or something.
-
-# IMPORTANT ❗
-
-⚠️ This project is in beta — bugs are expected. If you find one, please report it in the Issues tab.
-
-🔄 This app is actively updated — always check for the latest release before using again. There is some cool stuff being added so be in check !
-
-🔓 Fully open source, small project, but if you find it useful, share it. Just don't skid it and call it yours (Yes im talking to you Epstein.)
-
-
 
 # Changelog:
 
