@@ -61,7 +61,8 @@
   
 
 ### What's next?
-- Fixing the Always on Top not working
-- Making the AI more trained
+- fixing the Always on Top not working
+- making the AI more trained
+- fixing the proccess selector for Scan and Math tabs
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
