@@ -9,14 +9,13 @@
 
 ## Features:
 
-⌨️ AutoType — types any text with configurable WPM, rhythm variance, stutters, typos, thinking pauses, and hotkey triggers
-🔍 AI Scanner — screenshot any window, AI detects every question, checks answers, flags wrong ones with corrections
-📐 AI Math Solver — scans math problems, returns step-by-step solutions with explanations, vertical method, and graphs
-💬 Q&A — ask the AI anything, one-shot or follow-up conversation mode
-🎤 Voice Control — wake-word activated commands to start/pause/stop typing hands-free, with live mic monitor
-🎵 Music Player — search YouTube or play local files (mp3/flac/wav/etc) without leaving the app
-📋 History — auto-saves all past scans and math solutions, formula library for reuse
-🪟 Custom UI — fully frameless window with custom purple titlebar, drag, minimize, and close — no default Windows chrome
+- ⌨️ AutoType — types any text with configurable WPM, rhythm variance, stutters, typos, thinking pauses, and much more
+- 🔍 AI Scanner — screenshot any window, AI detects every question, checks answers, flags wrong ones with corrections
+- 📐 AI Math Solver — scans math problems, returns step-by-step solutions with explanations, vertical method, and graphs
+- 💬 Q&A — ask the AI anything, nothing is out of limits but that **doesn't** mean be horny!
+- 🎤 Voice Control — Wake word activated commands to start/pause/stop typing hands-free, with live mic monitor
+- 🎵 Music Player — searches YouTube and lets you play local files (mp3/flac/wav/etc) without leaving the app
+- 📋 History — Automatically saves all past scans and math solutions, formula library for reuse
 
 # Important ❗
 
