@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fiuxxed's AutoTyper v9 — 127.0.0.1:7890</title>
+<title>Fiuxxed's AutoTyper v9.1</title>
 <style>
 :root{
   --bg:#07070e;--surface:#0d0c18;--card:#111020;--card2:#181628;
@@ -18,6 +18,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;-webkit-text-size-adjust:100%}
+html,body,#app,#content,#tabs,#sbody,.panel,#panels,#sbar,.card,.scan-card,.scan-results,.qa-hist,.math-results,input,select,textarea,button{-webkit-app-region:no-drag!important;app-region:no-drag!important}
 body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;transform:translateZ(0)}
 /* Frameless: remove default browser body margin/border artifacts */
@@ -29,7 +30,7 @@ html,body{border:none!important;outline:none!important;}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 #app{display:flex;flex-direction:column;height:100vh;contain:strict}
 /* ── Custom Frameless Titlebar ── */
-#titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;-webkit-app-region:drag;app-region:drag;position:relative;z-index:10;user-select:none}
+#titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;-webkit-app-region:drag;app-region:drag;position:relative;z-index:10;user-select:none}#titlebar button,#titlebar .btn,#tb-close,#tb-min,#tb-settings{-webkit-app-region:no-drag;app-region:no-drag}
 #drag-region{display:flex;align-items:center;gap:10px;flex:1;padding:0 12px;height:100%;cursor:grab;-webkit-app-region:drag}
 #drag-region:active{cursor:grabbing}
 .tb-logo{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 0 14px #7c3aed55;pointer-events:none}
@@ -175,6 +176,13 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .step-exp{font-size:10.5px;color:var(--muted);margin-top:2px}
 /* Vertical method */
 .vertical-method{font-family:'Consolas',monospace;font-size:12px;line-height:1.7;background:var(--card);padding:12px;border-radius:var(--rs);color:var(--text2);white-space:pre;overflow-x:auto}
+.humanize-bar{padding:8px 12px;border-top:1px solid var(--border);background:var(--card2)}
+.humanize-out{background:var(--surface);border:1px solid var(--accent);border-radius:var(--rs);padding:9px 12px;font-size:11px;color:var(--text2);margin-bottom:7px;line-height:1.6;white-space:pre-wrap}
+.ctx-box{position:relative;margin-bottom:6px}
+.ctx-box textarea{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text2);font-size:10.5px;padding:8px 32px 8px 10px;resize:vertical;min-height:60px!important;font-family:inherit;box-sizing:border-box}
+.ctx-box textarea:focus{border-color:var(--accent);outline:none}
+.ctx-box .ctx-del{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px}
+.ctx-box .ctx-del:hover{color:var(--red)}
 /* Graph */
 .math-graph{text-align:center;padding:4px 0 8px}
 .math-graph img{max-width:100%;border-radius:var(--rs)}
@@ -240,6 +248,20 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .music-title{font-size:11px;font-weight:600;color:var(--text2);line-height:1.35;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .music-ch{font-size:9.5px;color:var(--muted);margin-top:2px}
 .music-src-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:600;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:color var(--t),border-color var(--t)}
+/* Region selector */
+#region-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+#region-overlay.open{display:flex}
+#region-wrap{position:relative;display:inline-block;cursor:crosshair;border:2px solid var(--accent);border-radius:var(--rs);overflow:hidden;max-width:100%;max-height:70vh}
+#region-img{display:block;max-width:100%;max-height:70vh;user-select:none;pointer-events:none}
+#region-box{position:absolute;border:2px solid var(--accent2);background:rgba(168,85,247,.18);display:none;pointer-events:none}
+#region-hint{color:var(--text2);font-size:11.5px;margin-bottom:10px;text-align:center}
+#region-actions{display:flex;gap:8px;margin-top:10px}
+/* Image chips */
+.img-chip{display:inline-flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--accent);border-radius:20px;padding:3px 10px 3px 6px;font-size:10px;color:var(--accent2);cursor:default;position:relative}
+.img-chip img{width:22px;height:22px;object-fit:cover;border-radius:3px}
+.img-chip .chip-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 0 0 4px;line-height:1}
+.img-chip .chip-del:hover{color:var(--red)}
+#img-attach-scan,#img-attach-qa{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .music-src-tab:hover{color:var(--text2)}
 .music-src-tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
 </style>
@@ -252,7 +274,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     <div class="tb-logo">⌨</div>
     <div class="tb-brand">
       <span class="tb-title">Fiuxxed's AutoTyper</span>
-      <span class="tb-sub">v9 · AI Edition</span>
+      <span class="tb-sub">v9.1 · AI Edition</span>
     </div>
   </div>
   <div class="tb-actions">
@@ -336,6 +358,15 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
       </div>
       <select id="win-scan" onchange="pickWin('scan')"><option value="">— click Refresh —</option></select>
       <div id="wtype-scan" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
+      <div id="scan-ctx-boxes" style="margin-top:10px"></div>
+      <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:6px" onclick="addContextBox('scan')">＋ Add Extra Context</button>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <label class="btn btn-ghost" style="font-size:10.5px;flex:1;cursor:pointer">
+          🖼 Attach Image<input type="file" accept="image/*" multiple style="display:none" onchange="attachImages(this,'scan')">
+        </label>
+        <button class="btn btn-s" style="font-size:10.5px;flex:1" onclick="openRegionSelector('scan')" id="region-scan-btn" disabled>✂ Select Region</button>
+      </div>
+      <div id="img-attach-scan"></div>
       <button id="scan-btn" class="btn btn-p btn-full mt10" onclick="doShot('scan')" disabled>📸 Screenshot & Scan</button>
     </div>
     <!-- Legend -->
@@ -389,6 +420,12 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     </div>
     <div class="card">
       <input type="text" id="qa-inp" placeholder="Ask a new question…" onkeydown="if(event.key==='Enter')qaAsk()">
+      <div id="qa-ctx-boxes" style="margin-top:8px"></div>
+      <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:4px" onclick="addContextBox('qa')">＋ Add Extra Context</button>
+      <label class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:4px;cursor:pointer">
+        🖼 Attach Images (unlimited)<input type="file" accept="image/*" multiple style="display:none" onchange="attachImages(this,'qa')">
+      </label>
+      <div id="img-attach-qa"></div>
       <button class="btn btn-p btn-full mt8" id="qa-btn" onclick="qaAsk()">⚡ Get Answer</button>
     </div>
     <div id="qa-stat" style="font-size:10px;color:var(--muted);margin:5px 0 3px"></div>
@@ -609,6 +646,8 @@ function applyS() {
   const w = S.voice_wake_word||"hey fiuxxed";
   q("#wake-inp").value = w;
   q("#v-wake").textContent = `Wake word: "${w}"`;
+  // Apply opacity immediately on load
+  post("/api/settings", S).catch(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
@@ -798,18 +837,23 @@ function pickWin(tab) {
 // ══════════════════════════════════════════════════════
 //  SCANNER
 // ══════════════════════════════════════════════════════
-async function doShot(mode) {
+async function doShot(mode, region) {
   const isM = mode==="math";
   const btnId=isM?"math-btn":"scan-btn";
   const statId=isM?"math-stat":"scan-stat";
   const progId=isM?"math-prog":"scan-prog";
   const pbarId=isM?"math-pbar":"scan-pbar";
   const hwnd=isM?hwndMath:hwndScan;
+  const tabKey = isM ? "math" : "scan";
   q("#"+btnId).disabled=true; q("#"+btnId).textContent="⏳ Scanning…";
   q("#"+progId).style.display="block";
   q("#"+statId).innerHTML='<span class="loading">📸 Taking screenshot & analyzing…</span>';
   animProg(pbarId,0,35,700);
-  const d = await post("/api/screenshot",{hwnd,mode}).catch(e=>({error:e.toString()}));
+  const ctxBoxes = getContextBoxes(isM?"math":"scan");
+  const extraImgs = [...(_attachedImages[tabKey]||[])];
+  const body = { hwnd, mode, extra_context: ctxBoxes, extra_images: extraImgs };
+  if (region) body.region = region;
+  const d = await post("/api/screenshot", body).catch(e=>({error:e.toString()}));
   animProg(pbarId,35,100,500);
   setTimeout(()=>{ q("#"+progId).style.display="none"; },700);
   if(d.error){
@@ -817,8 +861,10 @@ async function doShot(mode) {
     q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Screenshot & Solve":"📸 Screenshot & Scan"; return;
   }
   if(isM) renderMath(d.result);
-  else    renderScan(d.result);
-  q("#"+btnId).disabled=false; q("#"+btnId).textContent="📸 Scan Again";
+  else { renderScan(d.result); clearContextBoxes("scan"); }
+  // Clear attached images after scan
+  _attachedImages[tabKey] = []; renderImageChips(tabKey);
+  q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Scan Again":"📸 Scan Again";
 }
 
 function animProg(id,from,to,dur) {
@@ -843,6 +889,7 @@ function renderScan(result) {
 }
 
 function renderScanCard(qa,i,cont) {
+  _scanAnswers[i] = qa.correct_answer || "";
   const typeMap={MULTIPLE_CHOICE:["MCQ","badge-mcq"],TRUE_FALSE:["T/F","badge-tf"],WRITTEN:["TXT","badge-txt"]};
   const [tl,tc]=typeMap[qa.type]||["TXT","badge-txt"];
   const label = qa.question_label ? `<span style="background:var(--accent);color:var(--white);padding:1px 8px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0">${esc(qa.question_label)}</span>` : `<span style="background:var(--accent);color:var(--white);padding:1px 8px;border-radius:4px;font-size:10px;font-weight:700;flex-shrink:0">Q${i+1}</span>`;
@@ -876,8 +923,16 @@ function renderScanCard(qa,i,cont) {
       ${qa.answered && qa.is_correct===true ? '✓ ' : ''}${esc(qa.correct_answer||"")}
     </div>
     <div class="sc-acts">
-      <button class="btn btn-s" style="flex:1;font-size:10.5px" onclick="atAnswer('${enc(qa.correct_answer||"")}')">⌨ AutoType</button>
+      <button class="btn btn-s" style="flex:1;font-size:10.5px" id="at-btn-${i}" onclick="atFromCard(${i})">⌨ AutoType</button>
       ${qa.type!=="MULTIPLE_CHOICE"?`<button class="btn btn-ghost" style="flex:1;font-size:10.5px" onclick="dblChk('${enc(qa.question||"")}','sa-${i}')">🔄 Recheck</button>`:""}
+    </div>
+    <div class="humanize-bar" id="hbar-${i}">
+      <div class="humanize-out" id="hout-${i}" style="display:none"></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('sa-${i}','hout-${i}','hbar-${i}','humanize')">✍ Humanize</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('sa-${i}','hout-${i}','hbar-${i}','longer')">📝 Longer</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('sa-${i}','hout-${i}','hbar-${i}','shorter')">✂ Shorter</button>
+      </div>
     </div>`;
 
   // Correction box for wrong answers
@@ -926,9 +981,84 @@ async function atAnswer(enc2) {
   setTimeout(doCountdown, 200);
 }
 
+const _scanAnswers = {};
+
+function atFromCard(i) {
+  // Always types the latest answer for this card (original or humanized rewrite)
+  const text = _scanAnswers[i] || "";
+  if (text) atAnswer(enc(text));
+}
+
 function clearScan() {
   q("#scan-results").innerHTML=""; q("#scan-stat").textContent="";
   q("#scan-banner").style.display="none"; q("#scan-prog").style.display="none";
+}
+
+// ── Context Boxes ──
+function addContextBox(tab) {
+  const cont = q(`#${tab}-ctx-boxes`);
+  const id = `ctx-${tab}-${Date.now()}`;
+  const box = document.createElement("div");
+  box.className = "ctx-box";
+  box.id = id;
+  box.innerHTML = `<textarea placeholder="Paste extra context here (notes, instructions, document excerpt)…"></textarea><button class="ctx-del" onclick="q('#${id}').remove()">✕</button>`;
+  cont.appendChild(box);
+  box.querySelector("textarea").focus();
+}
+
+function getContextBoxes(tab) {
+  const cont = q(`#${tab}-ctx-boxes`);
+  if (!cont) return [];
+  return Array.from(cont.querySelectorAll("textarea")).map(t => t.value.trim()).filter(Boolean);
+}
+
+function clearContextBoxes(tab) {
+  const cont = q(`#${tab}-ctx-boxes`);
+  if (cont) cont.innerHTML = "";
+}
+
+// ── Humanize ──
+const _humanizeCache = {};
+async function humanize(srcId, outId, barId, action) {
+  const srcEl = q("#" + srcId);
+  const outEl = q("#" + outId);
+  if (!srcEl) return;
+
+  // Always use the LATEST output as input — so shorter/longer chain infinitely
+  // If there's already a result in outEl, use that text; otherwise use the original answer
+  let text = "";
+  const existingResult = outEl.querySelector ? outEl.querySelector("div[data-htext]") : null;
+  if (existingResult) {
+    text = existingResult.dataset.htext;
+  } else {
+    text = srcEl.textContent.replace(/^[A-Z✓✓ ]+\s*/,"").trim();
+  }
+  if (!text) return;
+
+  const labels = {humanize:"✍ Humanizing…", longer:"📝 Making longer…", shorter:"✂ Making shorter…"};
+  outEl.style.display = "block";
+  // Show spinner but keep previous result visible underneath
+  const spinner = document.createElement("div");
+  spinner.style.cssText = "font-size:10.5px;color:var(--accent2);padding:4px 0 6px";
+  spinner.textContent = labels[action] || "Working…";
+  outEl.prepend(spinner);
+
+  const r = await post("/api/humanize", {text, action}).catch(e=>({error:e.toString()}));
+  spinner.remove();
+  if (r.error) { outEl.textContent = "⚠ " + r.error; return; }
+
+  const key = "h_" + Date.now();
+  _humanizeCache[key] = r.result;
+  // Update scan card's AutoType answer too
+  const scanIdx = outId.match(/^hout-(\d+)$/);
+  if (scanIdx) _scanAnswers[parseInt(scanIdx[1])] = r.result;
+
+  outEl.innerHTML = `
+    <div data-htext="${r.result.replace(/"/g,'&quot;')}" style="margin-bottom:8px;white-space:pre-wrap;font-size:11px;line-height:1.6">${esc(r.result)}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="btn btn-s" style="font-size:10px;padding:4px 10px" data-hkey="${key}" onclick="atAnswer(enc(_humanizeCache[this.dataset.hkey]))">⌨ AutoType</button>
+      <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" onclick="navigator.clipboard.writeText(_humanizeCache['${key}']).then(()=>this.textContent='✓ Copied').catch(()=>{})">📋 Copy</button>
+    </div>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1102,7 +1232,11 @@ async function qaAsk() {
   btn.disabled=true; btn.innerHTML='<span class="spin-ico">⟳</span> Thinking…';
   stat.innerHTML='<span class="loading">'+(qaMode==="fu"?"Going deeper on topic…":"Asking AI…")+'</span>';
   q("#qa-empty").style.display="none";
-  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu"}).catch(e=>({error:e.toString()}));
+  const qaCtx = getContextBoxes("qa");
+  const qaImgs = [...(_attachedImages.qa||[])];
+  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu",extra_context:qaCtx,extra_images:qaImgs}).catch(e=>({error:e.toString()}));
+  clearContextBoxes("qa");
+  _attachedImages.qa = []; renderImageChips("qa");
   btn.disabled=false; btn.textContent="⚡ Get Answer";
   if(r.error){stat.innerHTML=`<span style="color:var(--red)">⚠ ${esc(r.error)}</span>`;return;}
   qaHist = r.history||[];
@@ -1117,10 +1251,19 @@ function addQaCard(question, answer, isFu) {
   const hist=q("#qa-hist");
   const card=document.createElement("div");
   card.className="qa-card"+(isFu?" fu":"");
+  const cid = Date.now();
   card.innerHTML=`
     ${isFu?'<div class="qa-fu-tag">↩ Follow-up on previous topic</div>':""}
     <div class="qa-q"><b>Q</b>&nbsp; ${esc(question)}</div>
-    <div class="qa-a"><b>A</b>&nbsp; ${esc(answer)}</div>`;
+    <div class="qa-a" id="qa-ans-${cid}"><b>A</b>&nbsp; ${esc(answer)}</div>
+    <div class="humanize-bar" id="hbar-qa-${cid}">
+      <div class="humanize-out" id="hout-qa-${cid}" style="display:none"></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('qa-ans-${cid}','hout-qa-${cid}','hbar-qa-${cid}','humanize')">✍ Humanize</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('qa-ans-${cid}','hout-qa-${cid}','hbar-qa-${cid}','longer')">📝 Longer</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('qa-ans-${cid}','hout-qa-${cid}','hbar-qa-${cid}','shorter')">✂ Shorter</button>
+      </div>
+    </div>`;
   hist.appendChild(card);
 }
 
@@ -1436,8 +1579,11 @@ function buildSettings(tab) {
     sep("🧠  HUMAN BEHAVIOUR");
     sl("Stutter Chance","stutter_chance",0,100,1,"%","mid-pause every 4th word");
     sl("Stutter Duration","stutter_duration",0.3,6,0.1,"s");
+    sep("🔄  SYNONYM SWAP");
+    sl("Synonym Swap Chance","synonym_swap_chance",0,100,1,"%","chance to swap a word mid-type then retype with synonym");
+    sl("Swap Pause","synonym_swap_pause",0.3,5,0.1,"s","how long to pause before backspacing and retyping");
     sl("Typo Chance","typo_chance",0,30,1,"%","wrong key → auto corrected");
-    sl("Thinking Pause %","thinking_pause_chance",0,20,1,"%","random freeze");
+    sl("Thinking Pause %","thinking_pause_chance",0,100,1,"%","random freeze");
     sl("Thinking Pause Min","thinking_pause_min",100,2000,50," ms");
     sl("Thinking Pause Max","thinking_pause_max",200,5000,100," ms");
     sep("🔣  SYMBOL PAUSE");
@@ -1731,22 +1877,172 @@ function fmtDur(s) {
   return `${m}:${String(sec).padStart(2,"0")}`;
 }
 // ══════════════════════════════════════════════════════
+//  IMAGE ATTACHMENTS + REGION SELECTOR
+// ══════════════════════════════════════════════════════
+const _attachedImages = { scan: [], qa: [] };
+
+function attachImages(input, tab) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const b64 = e.target.result.split(",")[1]; // strip data:image/...;base64,
+      _attachedImages[tab].push(b64);
+      renderImageChips(tab);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = ""; // reset so same file can be added again
+}
+
+function renderImageChips(tab) {
+  const cont = q("#img-attach-" + tab);
+  cont.innerHTML = "";
+  _attachedImages[tab].forEach((b64, i) => {
+    const chip = document.createElement("div");
+    chip.className = "img-chip";
+    chip.innerHTML = `<img src="data:image/jpeg;base64,${b64}"><span>Image ${i+1}</span><button class="chip-del" onclick="removeImage('${tab}',${i})">✕</button>`;
+    cont.appendChild(chip);
+  });
+}
+
+function removeImage(tab, i) {
+  _attachedImages[tab].splice(i, 1);
+  renderImageChips(tab);
+}
+
+// ── Region Selector ──────────────────────────────────
+let _regionMode = "scan";  // which tab opened it
+let _regionHwnd = null;
+let _regionFull = { x:0, y:0, w:1, h:1 }; // fallback = full image
+let _regionSel  = null;   // {x,y,w,h} fractions selected by user
+let _regionDrag = false;
+let _regionStart = null;
+
+async function openRegionSelector(tab) {
+  _regionMode = tab;
+  _regionHwnd = tab === "scan" ? hwndScan : hwndMath;
+  _regionSel = null;
+  q("#region-confirm-btn").disabled = true;
+  q("#region-box").style.display = "none";
+  const overlay = q("#region-overlay");
+  overlay.classList.add("open");
+  const img = q("#region-img");
+  img.src = "";
+  q("#region-hint").textContent = "📸 Taking screenshot…";
+  const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }).catch(e => ({ error: e.toString() }));
+  if (r.error) { q("#region-hint").textContent = "⚠ " + r.error; return; }
+  img.src = "data:image/png;base64," + r.b64;
+  q("#region-hint").textContent = "🖱 Click and drag to select the region you want to scan. Or scan the full screen.";
+}
+
+function closeRegion() {
+  q("#region-overlay").classList.remove("open");
+  _regionDrag = false; _regionSel = null;
+}
+
+function scanFullScreen() {
+  _regionSel = null;
+  closeRegion();
+  doShot(_regionMode, null);
+}
+
+async function confirmRegion() {
+  if (!_regionSel) return;
+  closeRegion();
+  doShot(_regionMode, _regionSel);
+}
+
+// Region drag events on the image wrapper
+document.addEventListener("DOMContentLoaded", () => {
+  const wrap = q("#region-wrap");
+  if (!wrap) return;
+
+  wrap.addEventListener("mousedown", e => {
+    if (!q("#region-overlay").classList.contains("open")) return;
+    _regionDrag = true;
+    const r = wrap.getBoundingClientRect();
+    _regionStart = { x: e.clientX - r.left, y: e.clientY - r.top, rw: r.width, rh: r.height };
+    q("#region-box").style.cssText = `left:${_regionStart.x}px;top:${_regionStart.y}px;width:0;height:0;display:block`;
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", e => {
+    if (!_regionDrag || !_regionStart) return;
+    const r = wrap.getBoundingClientRect();
+    const cx = Math.max(0, Math.min(e.clientX - r.left, _regionStart.rw));
+    const cy = Math.max(0, Math.min(e.clientY - r.top,  _regionStart.rh));
+    const bx = Math.min(_regionStart.x, cx); const by = Math.min(_regionStart.y, cy);
+    const bw = Math.abs(cx - _regionStart.x); const bh = Math.abs(cy - _regionStart.y);
+    q("#region-box").style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px;display:block`;
+  });
+
+  document.addEventListener("mouseup", e => {
+    if (!_regionDrag || !_regionStart) return;
+    _regionDrag = false;
+    const r = wrap.getBoundingClientRect();
+    const cx = Math.max(0, Math.min(e.clientX - r.left, _regionStart.rw));
+    const cy = Math.max(0, Math.min(e.clientY - r.top,  _regionStart.rh));
+    const bx = Math.min(_regionStart.x, cx); const by = Math.min(_regionStart.y, cy);
+    const bw = Math.abs(cx - _regionStart.x); const bh = Math.abs(cy - _regionStart.y);
+    if (bw > 10 && bh > 10) {
+      // Convert pixel coords to fractions of original image
+      _regionSel = {
+        x: bx / _regionStart.rw, y: by / _regionStart.rh,
+        w: bw / _regionStart.rw, h: bh / _regionStart.rh
+      };
+      q("#region-confirm-btn").disabled = false;
+    }
+  });
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && q("#region-overlay").classList.contains("open")) closeRegion();
+});
+
+// ── Enable region button when window is selected ──
+const _origPickWin = pickWin;
+function pickWin(tab) {
+  _origPickWin(tab);
+  if (tab === "scan") q("#region-scan-btn").disabled = false;
+}
+
+// ══════════════════════════════════════════════════════
 //  WINDOW CONTROL  (frameless titlebar)
 // ══════════════════════════════════════════════════════
 function dragWindow() {
-  // Tell backend to release capture and send WM_NCLBUTTONDOWN — native OS drag
-  fetch("/api/window/drag", {method:"POST"}).catch(()=>{});
+  // pywebview exposes drag() synchronously — must happen during mousedown, no HTTP delay
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.drag) {
+    window.pywebview.api.drag();
+  } else {
+    fetch("/api/window/drag", {method:"POST"}).catch(()=>{});
+  }
+}
+function dragStart() {
+  fetch("/api/window/drag_start", {method:"POST"}).catch(()=>{});
+}
+function dragEnd() {
+  // Small delay so AOT watcher doesn't fire mid-release
+  setTimeout(() => fetch("/api/window/drag_end", {method:"POST"}).catch(()=>{}), 200);
 }
 
 function minimizeWindow() {
-  fetch("/api/window/minimize", {method:"POST"}).catch(()=>{});
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.minimize) {
+    window.pywebview.api.minimize();
+  } else {
+    fetch("/api/window/minimize", {method:"POST"}).catch(()=>{});
+  }
 }
 
 function closeWindow() {
-  // Visual feedback first
   document.body.style.opacity = "0";
   document.body.style.transition = "opacity .15s";
-  fetch("/api/window/close", {method:"POST"}).catch(()=>{});
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.close) {
+    setTimeout(() => window.pywebview.api.close(), 120);
+  } else {
+    fetch("/api/window/close", {method:"POST"}).catch(()=>{});
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1758,5 +2054,23 @@ document.querySelectorAll(".tab").forEach(b => {
 
 boot();
 </script>
+<script>
+document.addEventListener("mouseup", () => {
+  setTimeout(() => fetch("/api/window/drag_end", {method:"POST"}).catch(()=>{}), 200);
+});
+</script>
+<!-- ─── REGION SELECTOR OVERLAY ─── -->
+<div id="region-overlay">
+  <div id="region-hint">🖱 Click and drag to select a region to scan. Press <b>Esc</b> to cancel.</div>
+  <div id="region-wrap">
+    <img id="region-img" src="" alt="screenshot">
+    <div id="region-box"></div>
+  </div>
+  <div id="region-actions">
+    <button class="btn btn-p" id="region-confirm-btn" onclick="confirmRegion()" disabled>✓ Scan This Region</button>
+    <button class="btn btn-ghost" onclick="closeRegion()">✕ Cancel</button>
+    <button class="btn btn-s" id="region-fullbtn" onclick="scanFullScreen()">📸 Scan Full Screen</button>
+  </div>
+</div>
 </body>
 </html>

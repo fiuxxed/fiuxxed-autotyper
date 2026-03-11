@@ -680,30 +680,35 @@ def ai_double_check(question):
 
 def ai_qa(question, history, is_followup, extra_context=None, extra_images=None):
     client = get_client()
+    has_images = bool(extra_images and any(ei for ei in extra_images))
+    model = "meta-llama/llama-4-scout-17b-16e-instruct" if has_images else "llama-3.3-70b-versatile"
     ctx_block = ""
     if extra_context:
         joined = "\n\n".join(c.strip() for c in extra_context if c.strip())
-        if joined:
-            ctx_block = f"\n\n[EXTRA CONTEXT — use this to inform your answer]:\n{joined}"
+        if joined: ctx_block = f"\n\n[EXTRA CONTEXT]:\n{joined}"
+    def _uc(text):
+        if has_images:
+            parts = []
+            for ei in (extra_images or []):
+                if not ei: continue
+                url = ei if ei.startswith("data:") else f"data:image/jpeg;base64,{ei}"
+                parts.append({"type":"image_url","image_url":{"url":url}})
+            parts.append({"type":"text","text":text})
+            return parts
+        return text  # plain string — non-vision models require this
     if is_followup and history:
-        messages = list(history) + [{"role":"user","content":f"{question}{ctx_block}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]"}]
+        messages = list(history) + [{"role":"user","content":_uc(f"{question}{ctx_block}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]")}]
         max_tok = 400
     else:
-        if extra_images:
-            img_msg = [{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}} for ei in extra_images if ei]
-            img_msg.append({"type":"text","text":question+ctx_block})
-            user_content = img_msg
-        else:
-            user_content = question+ctx_block
-        messages = [
-            {"role":"system","content":"You are a sharp, direct assistant. Answer clearly and directly. If images are provided, analyze them to answer. No intros, no filler. Just the answer."},
-            {"role":"user","content":user_content}
-        ]
-        max_tok = 120
-    resp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages, max_tokens=max_tok, temperature=0.4)
+        sys_msg = ("You are a sharp assistant. Analyze the provided image(s) and answer directly." if has_images
+                   else "You are a sharp, direct assistant. Answer in ONE sentence, max 20 words. No intros. Just the answer.")
+        messages = [{"role":"system","content":sys_msg}, {"role":"user","content":_uc(question+ctx_block)}]
+        max_tok = 300 if has_images else 120
+    resp = client.chat.completions.create(model=model, messages=messages, max_tokens=max_tok, temperature=0.4)
     answer = resp.choices[0].message.content.strip()
     if not is_followup:
-        new_history = [{"role":"system","content":"You are a helpful, knowledgeable assistant."},{"role":"user","content":question},{"role":"assistant","content":answer}]
+        new_history = [{"role":"system","content":"You are a helpful, knowledgeable assistant."},
+                       {"role":"user","content":question},{"role":"assistant","content":answer}]
     else:
         new_history = list(history) + [{"role":"user","content":question},{"role":"assistant","content":answer}]
     return answer, new_history
