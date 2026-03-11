@@ -58,12 +58,20 @@
 - a synonym swapper setting
 - a more specific image region selector making it easy to scan certain parts of a window
 - the ability to attach your own images that are on the local device (don't be freaky)
-  
+
 
 ### What's next?
 - fixing the Always on Top not working
 - making the AI more trained
 - fixing the proccess selector for Scan and Math tabs
 - fixing file explorer crash on launch
+
+
+## March 11, 2026
+
+### Fixed
+- finally f***ing fixed Always on Top from not working
+- fixed file explorer from crashing on run
+  
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
