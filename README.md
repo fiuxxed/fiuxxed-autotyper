@@ -64,5 +64,6 @@
 - fixing the Always on Top not working
 - making the AI more trained
 - fixing the proccess selector for Scan and Math tabs
+- fixing file explorer crash on launch
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
