@@ -28,7 +28,7 @@ html,body{border:none!important;outline:none!important;}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-#app{display:flex;flex-direction:column;height:100vh;contain:strict}
+#app{display:flex;flex-direction:column;height:100vh}
 /* ── Custom Frameless Titlebar ── */
 #titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;-webkit-app-region:drag;app-region:drag;position:relative;z-index:10;user-select:none}#titlebar button,#titlebar .btn,#tb-close,#tb-min,#tb-settings{-webkit-app-region:no-drag;app-region:no-drag}
 #drag-region{display:flex;align-items:center;gap:10px;flex:1;padding:0 12px;height:100%;cursor:grab;-webkit-app-region:drag}
@@ -46,7 +46,7 @@ html,body{border:none!important;outline:none!important;}
 .tab{flex:1;min-width:0;padding:10px 2px;font-size:10px;font-weight:600;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:color var(--t),border-color var(--t),background var(--t);user-select:none;white-space:nowrap;font-family:inherit}
 .tab:hover{color:var(--text2);background:var(--accentbg)}
 .tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
-#panels{flex:1;overflow:hidden;position:relative;contain:strict}
+#panels{flex:1;overflow-y:auto;overflow-x:hidden;position:relative}
 .panel{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:14px;opacity:0;pointer-events:none;transform:translateY(6px);transition:opacity .18s var(--ease),transform .18s var(--ease);will-change:opacity,transform;contain:layout style;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .panel.on{opacity:1;pointer-events:auto;transform:translateY(0)}
 #sbar{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;font-size:10.5px;color:var(--muted)}
@@ -78,7 +78,7 @@ html,body{border:none!important;outline:none!important;}
 .btn-full{width:100%}
 .btn-lg{padding:13px 20px;font-size:13.5px;border-radius:11px}
 /* Inputs */
-input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;font-size:12px;padding:9px 11px;outline:none;transition:border-color var(--t)}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;font-size:12px;padding:9px 11px;outline:none;transition:border-color var(--t)}select{position:relative;z-index:50}
 input:focus,select:focus,textarea:focus{border-color:var(--accent2)}
 input::placeholder{color:var(--muted)}
 textarea{resize:vertical;min-height:88px;font-family:'Consolas',monospace;line-height:1.55;font-size:12px}
@@ -249,13 +249,16 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .music-ch{font-size:9.5px;color:var(--muted);margin-top:2px}
 .music-src-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:600;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:color var(--t),border-color var(--t)}
 /* Region selector */
-#region-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+#region-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
 #region-overlay.open{display:flex}
-#region-wrap{position:relative;display:inline-block;cursor:crosshair;border:2px solid var(--accent);border-radius:var(--rs);overflow:hidden;max-width:100%;max-height:70vh}
-#region-img{display:block;max-width:100%;max-height:70vh;user-select:none;pointer-events:none}
-#region-box{position:absolute;border:2px solid var(--accent2);background:rgba(168,85,247,.18);display:none;pointer-events:none}
+#region-wrap{position:relative;display:inline-block;cursor:none;border:2px solid var(--accent);border-radius:var(--rs);max-width:100%;max-height:70vh;overflow:visible}
+#region-img{display:block;max-width:100%;max-height:70vh;user-select:none;pointer-events:none;border-radius:var(--rs)}
+#region-box{position:absolute;border:2px solid var(--accent2);background:rgba(168,85,247,.18);display:none;pointer-events:none;z-index:2}
 #region-hint{color:var(--text2);font-size:11.5px;margin-bottom:10px;text-align:center}
 #region-actions{display:flex;gap:8px;margin-top:10px}
+/* Magnifier lens */
+#mag-lens{position:fixed;width:180px;height:180px;border-radius:50%;border:3px solid var(--accent2);box-shadow:0 0 0 1px rgba(0,0,0,.5),0 8px 32px rgba(0,0,0,.7);overflow:hidden;pointer-events:none;display:none;z-index:9100;transform:translate(-50%,-50%)}
+#mag-canvas{position:absolute;top:0;left:0}
 /* Image chips */
 .img-chip{display:inline-flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--accent);border-radius:20px;padding:3px 10px 3px 6px;font-size:10px;color:var(--accent2);cursor:default;position:relative}
 .img-chip img{width:22px;height:22px;object-fit:cover;border-radius:3px}
@@ -269,7 +272,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 <body>
 <div id="app">
 
-<div id="titlebar" id="titlebar">
+<div id="titlebar">
   <div id="drag-region" onmousedown="dragWindow()">
     <div class="tb-logo">⌨</div>
     <div class="tb-brand">
@@ -465,7 +468,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <button class="btn btn-s" id="mic-monitor-btn" onclick="toggleMicMonitor()" style="flex:1">🎙 Monitor Mic</button>
         <button class="btn btn-s" onclick="testMic()" style="flex:1">🔤 Test Speech</button>
       </div>
-      <div id="mic-monitor-status" style="display:none;margin-top:8px;padding:9px 12px;background:var(--accentbg);border:1px solid var(--accent);border-radius:var(--rs);font-size:10.5px;color:var(--accent2);display:none;align-items:center;gap:8px">
+      <div id="mic-monitor-status" style="display:none;margin-top:8px;padding:9px 12px;background:var(--accentbg);border:1px solid var(--accent);border-radius:var(--rs);font-size:10.5px;color:var(--accent2);align-items:center;gap:8px">
         <span id="mic-monitor-ico" style="font-size:16px">🔴</span>
         <div style="flex:1">
           <div style="font-weight:700" id="mic-monitor-label">Monitoring mic…</div>
@@ -621,6 +624,7 @@ let qaMode = "new";
 let qaHist = [];
 let winsScan=[], winsMath=[];
 let hwndScan=null, hwndMath=null;
+const _attachedImages = { scan: [], qa: [], math: [] };
 let voicePoll = false;
 let curSTab = "typing";
 
@@ -807,16 +811,51 @@ function setStat(msg, kind) {
 async function loadWins(tab) {
   const selId = tab==="scan"?"win-scan":"win-math";
   const sel = q("#"+selId);
-  sel.innerHTML="<option>Scanning windows…</option>";
+  // Remember previously selected hwnd so we can re-select after refresh
+  const prevHwnd = tab==="scan" ? (hwndScan ? String(hwndScan) : null) : (hwndMath ? String(hwndMath) : null);
+  sel.innerHTML="<option>Loading windows…</option>";
   const d = await get("/api/windows").catch(()=>({windows:[]}));
   const wins=d.windows||[];
   if(tab==="scan") winsScan=wins; else winsMath=wins;
   sel.innerHTML="";
-  wins.forEach((w,i)=>{
-    const o=document.createElement("option");
-    o.value=i; o.textContent=`${w.title}  [${w.name}]`; sel.appendChild(o);
-  });
-  if(wins.length) sel.dispatchEvent(new Event("change"));
+  if(!wins.length){ sel.innerHTML="<option value=''>No windows found — try Refresh</option>"; return; }
+
+  // Build grouped options: apps first, then a divider, then browsers
+  const apps     = wins.filter(w=>!w.is_browser);
+  const browsers = wins.filter(w=> w.is_browser);
+
+  if(apps.length){
+    const grp = document.createElement("optgroup");
+    grp.label = "📄 Apps & Documents";
+    apps.forEach(w=>{
+      const o=document.createElement("option");
+      o.value=String(w.hwnd);
+      o.textContent=w.title.length>60 ? w.title.substring(0,60)+"…" : w.title;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  }
+  if(browsers.length){
+    const grp = document.createElement("optgroup");
+    grp.label = "🌐 Browser Tabs";
+    browsers.forEach(w=>{
+      const o=document.createElement("option");
+      o.value=String(w.hwnd);
+      o.textContent=w.title.length>60 ? w.title.substring(0,60)+"…" : w.title;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  }
+
+  // Try to restore previous selection, else default to first (which is already best suggestion)
+  const allOpts = Array.from(sel.options);
+  if(prevHwnd && allOpts.some(o=>o.value===prevHwnd)){
+    sel.value = prevHwnd;
+  } else {
+    // Pick first option (backend already sorted non-browsers first)
+    if(sel.options.length) sel.options[0].selected = true;
+  }
+  sel.dispatchEvent(new Event("change"));
 }
 
 function pickWin(tab) {
@@ -824,14 +863,16 @@ function pickWin(tab) {
   const typeId=tab==="scan"?"wtype-scan":"wtype-math";
   const btnId=tab==="scan"?"scan-btn":"math-btn";
   const wins=tab==="scan"?winsScan:winsMath;
-  const idx=parseInt(q("#"+selId).value);
-  const w=wins[idx];
+  const hwndVal = parseInt(q("#"+selId).value);
+  // Find by hwnd value (stable) instead of array index (breaks on refresh)
+  const w = wins.find(x => x.hwnd === hwndVal);
   if(!w){q("#"+btnId).disabled=true;return;}
   if(tab==="scan") hwndScan=w.hwnd; else hwndMath=w.hwnd;
   const td=q("#"+typeId);
   td.style.color=w.is_browser?"var(--green)":"var(--accent2)";
   td.textContent=w.is_browser?"🌐 Browser — active tab":"🖥 App window";
   q("#"+btnId).disabled=false;
+  if(tab==="scan") q("#region-scan-btn").disabled=false;
 }
 
 // ══════════════════════════════════════════════════════
@@ -864,7 +905,7 @@ async function doShot(mode, region) {
   else { renderScan(d.result); clearContextBoxes("scan"); }
   // Clear attached images after scan
   _attachedImages[tabKey] = []; renderImageChips(tabKey);
-  q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Scan Again":"📸 Scan Again";
+  q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Solve Again":"📸 Scan Again";
 }
 
 function animProg(id,from,to,dur) {
@@ -1677,6 +1718,9 @@ function switchTab(id) {
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===id));
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+id));
   if(id==="history") loadHistory();
+  // Only auto-load windows if the list is empty — preserves user's selection on tab revisit
+  if(id==="scanner" && !winsScan.length) loadWins("scan");
+  if(id==="math"    && !winsMath.length) loadWins("math");
 }
 
 // ══════════════════════════════════════════════════════
@@ -1879,8 +1923,6 @@ function fmtDur(s) {
 // ══════════════════════════════════════════════════════
 //  IMAGE ATTACHMENTS + REGION SELECTOR
 // ══════════════════════════════════════════════════════
-const _attachedImages = { scan: [], qa: [] };
-
 function attachImages(input, tab) {
   const files = Array.from(input.files);
   if (!files.length) return;
@@ -1898,6 +1940,7 @@ function attachImages(input, tab) {
 
 function renderImageChips(tab) {
   const cont = q("#img-attach-" + tab);
+  if (!cont) return;  // element may not exist for this tab (e.g. math tab has no attach UI)
   cont.innerHTML = "";
   _attachedImages[tab].forEach((b64, i) => {
     const chip = document.createElement("div");
@@ -1920,12 +1963,15 @@ let _regionSel  = null;   // {x,y,w,h} fractions selected by user
 let _regionDrag = false;
 let _regionStart = null;
 
+let _previewB64 = null;  // full-res b64 for magnifier sampling
 async function openRegionSelector(tab) {
   _regionMode = tab;
   _regionHwnd = tab === "scan" ? hwndScan : hwndMath;
   _regionSel = null;
+  _previewB64 = null;
   q("#region-confirm-btn").disabled = true;
   q("#region-box").style.display = "none";
+  q("#mag-lens").style.display = "none";
   const overlay = q("#region-overlay");
   overlay.classList.add("open");
   const img = q("#region-img");
@@ -1933,8 +1979,9 @@ async function openRegionSelector(tab) {
   q("#region-hint").textContent = "📸 Taking screenshot…";
   const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }).catch(e => ({ error: e.toString() }));
   if (r.error) { q("#region-hint").textContent = "⚠ " + r.error; return; }
+  _previewB64 = r.b64;
   img.src = "data:image/png;base64," + r.b64;
-  q("#region-hint").textContent = "🖱 Click and drag to select the region you want to scan. Or scan the full screen.";
+  q("#region-hint").textContent = "🖱 Drag to select region — hover to magnify. Or scan full screen.";
 }
 
 function closeRegion() {
@@ -1954,43 +2001,91 @@ async function confirmRegion() {
   doShot(_regionMode, _regionSel);
 }
 
-// Region drag events on the image wrapper
+// Region drag + magnifier
+let _magImg = null;
 document.addEventListener("DOMContentLoaded", () => {
   const wrap = q("#region-wrap");
   if (!wrap) return;
+  const lens = q("#mag-lens");
+  const magCtx = q("#mag-canvas").getContext("2d");
+  const MAG = 3; // zoom level
+  const LSIZE = 180;
+
+  function updateMag(clientX, clientY) {
+    if (!_previewB64 || !lens) return;
+    const imgEl = q("#region-img");
+    const ir = imgEl.getBoundingClientRect();
+    const mx = clientX - ir.left;
+    const my = clientY - ir.top;
+    if (mx < 0 || my < 0 || mx > ir.width || my > ir.height) { lens.style.display="none"; return; }
+    // Load image once
+    if (!_magImg || _magImg._src !== _previewB64) {
+      _magImg = new Image();
+      _magImg._src = _previewB64;
+      _magImg.src = "data:image/png;base64," + _previewB64;
+    }
+    // Fraction of displayed image
+    const fx = mx / ir.width; const fy = my / ir.height;
+    // Map to natural image dimensions
+    const nw = imgEl.naturalWidth || ir.width;
+    const nh = imgEl.naturalHeight || ir.height;
+    const sx = fx * nw - LSIZE / (2 * MAG);
+    const sy = fy * nh - LSIZE / (2 * MAG);
+    const sw = LSIZE / MAG; const sh = LSIZE / MAG;
+    magCtx.clearRect(0, 0, LSIZE, LSIZE);
+    magCtx.drawImage(_magImg, sx, sy, sw, sh, 0, 0, LSIZE, LSIZE);
+    // Position lens near cursor but not under it
+    let lx = clientX + 24, ly = clientY - 24;
+    if (lx + LSIZE/2 > window.innerWidth)  lx = clientX - 24 - LSIZE/2;
+    if (ly - LSIZE/2 < 0)                  ly = clientY + 24 + LSIZE/2;
+    lens.style.cssText = `display:block;left:${lx}px;top:${ly}px`;
+  }
+
+  wrap.addEventListener("mousemove", e => {
+    if (!q("#region-overlay").classList.contains("open")) return;
+    updateMag(e.clientX, e.clientY);
+    if (_regionDrag && _regionStart) {
+      const r = wrap.getBoundingClientRect();
+      const cx = Math.max(0, Math.min(e.clientX - r.left, r.width));
+      const cy = Math.max(0, Math.min(e.clientY - r.top,  r.height));
+      const bx = Math.min(_regionStart.x, cx); const by = Math.min(_regionStart.y, cy);
+      const bw = Math.abs(cx - _regionStart.x); const bh = Math.abs(cy - _regionStart.y);
+      q("#region-box").style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px;display:block;position:absolute;z-index:2`;
+    }
+  });
+
+  wrap.addEventListener("mouseleave", () => { if (lens) lens.style.display="none"; });
 
   wrap.addEventListener("mousedown", e => {
     if (!q("#region-overlay").classList.contains("open")) return;
     _regionDrag = true;
     const r = wrap.getBoundingClientRect();
-    _regionStart = { x: e.clientX - r.left, y: e.clientY - r.top, rw: r.width, rh: r.height };
-    q("#region-box").style.cssText = `left:${_regionStart.x}px;top:${_regionStart.y}px;width:0;height:0;display:block`;
+    _regionStart = { x: e.clientX - r.left, y: e.clientY - r.top };
+    q("#region-box").style.cssText = `left:${_regionStart.x}px;top:${_regionStart.y}px;width:0;height:0;display:block;position:absolute;z-index:2`;
     e.preventDefault();
-  });
-
-  document.addEventListener("mousemove", e => {
-    if (!_regionDrag || !_regionStart) return;
-    const r = wrap.getBoundingClientRect();
-    const cx = Math.max(0, Math.min(e.clientX - r.left, _regionStart.rw));
-    const cy = Math.max(0, Math.min(e.clientY - r.top,  _regionStart.rh));
-    const bx = Math.min(_regionStart.x, cx); const by = Math.min(_regionStart.y, cy);
-    const bw = Math.abs(cx - _regionStart.x); const bh = Math.abs(cy - _regionStart.y);
-    q("#region-box").style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px;display:block`;
   });
 
   document.addEventListener("mouseup", e => {
     if (!_regionDrag || !_regionStart) return;
     _regionDrag = false;
-    const r = wrap.getBoundingClientRect();
-    const cx = Math.max(0, Math.min(e.clientX - r.left, _regionStart.rw));
-    const cy = Math.max(0, Math.min(e.clientY - r.top,  _regionStart.rh));
+    const imgEl = q("#region-img");
+    const ir = imgEl.getBoundingClientRect();
+    const wrap_r = wrap.getBoundingClientRect();
+    const cx = Math.max(0, Math.min(e.clientX - wrap_r.left, wrap_r.width));
+    const cy = Math.max(0, Math.min(e.clientY - wrap_r.top,  wrap_r.height));
     const bx = Math.min(_regionStart.x, cx); const by = Math.min(_regionStart.y, cy);
     const bw = Math.abs(cx - _regionStart.x); const bh = Math.abs(cy - _regionStart.y);
     if (bw > 10 && bh > 10) {
-      // Convert pixel coords to fractions of original image
+      // Convert display px → fractions using the RENDERED image size (not wrap size)
+      const dispW = ir.width; const dispH = ir.height;
+      // Offset of image within wrap (image may be centered)
+      const imgOffX = ir.left - wrap_r.left;
+      const imgOffY = ir.top  - wrap_r.top;
       _regionSel = {
-        x: bx / _regionStart.rw, y: by / _regionStart.rh,
-        w: bw / _regionStart.rw, h: bh / _regionStart.rh
+        x: Math.max(0, (bx - imgOffX) / dispW),
+        y: Math.max(0, (by - imgOffY) / dispH),
+        w: Math.min(1, bw / dispW),
+        h: Math.min(1, bh / dispH)
       };
       q("#region-confirm-btn").disabled = false;
     }
@@ -2001,17 +2096,14 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && q("#region-overlay").classList.contains("open")) closeRegion();
 });
 
-// ── Enable region button when window is selected ──
-const _origPickWin = pickWin;
-function pickWin(tab) {
-  _origPickWin(tab);
-  if (tab === "scan") q("#region-scan-btn").disabled = false;
-}
+// region button now handled inside pickWin directly
 
 // ══════════════════════════════════════════════════════
 //  WINDOW CONTROL  (frameless titlebar)
 // ══════════════════════════════════════════════════════
 function dragWindow() {
+  // Signal AOT watcher to pause during drag (prevents z-order fighting)
+  dragStart();
   // pywebview exposes drag() synchronously — must happen during mousedown, no HTTP delay
   if (window.pywebview && window.pywebview.api && window.pywebview.api.drag) {
     window.pywebview.api.drag();
@@ -2055,9 +2147,8 @@ document.querySelectorAll(".tab").forEach(b => {
 boot();
 </script>
 <script>
-document.addEventListener("mouseup", () => {
-  setTimeout(() => fetch("/api/window/drag_end", {method:"POST"}).catch(()=>{}), 200);
-});
+// Send drag_end on every mouseup — tells AOT watcher the drag is done
+document.addEventListener("mouseup", () => dragEnd());
 </script>
 <!-- ─── REGION SELECTOR OVERLAY ─── -->
 <div id="region-overlay">
@@ -2066,6 +2157,7 @@ document.addEventListener("mouseup", () => {
     <img id="region-img" src="" alt="screenshot">
     <div id="region-box"></div>
   </div>
+<div id="mag-lens"><canvas id="mag-canvas" width="180" height="180"></canvas></div>
   <div id="region-actions">
     <button class="btn btn-p" id="region-confirm-btn" onclick="confirmRegion()" disabled>✓ Scan This Region</button>
     <button class="btn btn-ghost" onclick="closeRegion()">✕ Cancel</button>
