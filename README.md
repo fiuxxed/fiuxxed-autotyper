@@ -43,7 +43,6 @@
 
 ### Fixed
 - fixed run.bat crashing for no reason
-- fixed "always on top" not working
 - fixed the lag that happens when dragging the window
 
 ### Changed
@@ -54,5 +53,13 @@
 - an "extra context" button for the Scan tab
 - a humanzier for Scan and Q&A tab
 - a "Shorter" and "Longer" button for the Scan tab
+- a synonym swapper setting
+- a more specific image region selector making it easy to scan certain parts of a window
+- ability to attach your own images that are on the local device (don't be freaky)
+  
 
+### What's next?
+- Fixing the Always on Top not working
+- Making the AI more trained
+  
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
