@@ -55,7 +55,7 @@
 - a "Shorter" and "Longer" button for the Scan tab
 - a synonym swapper setting
 - a more specific image region selector making it easy to scan certain parts of a window
-- ability to attach your own images that are on the local device (don't be freaky)
+- the ability to attach your own images that are on the local device (don't be freaky)
   
 
 ### What's next?
