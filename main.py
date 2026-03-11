@@ -13,6 +13,7 @@ DEFAULTS = {
     "stop_after_chars": 0, "stop_after_words": 0, "stop_after_lines": 0,
     "typo_chance": 0, "stutter_chance": 40, "stutter_duration": 2.0,
     "thinking_pause_chance": 3, "thinking_pause_min": 300, "thinking_pause_max": 800,
+    "synonym_swap_chance": 15, "synonym_swap_pause": 1.2,
     "symbol_pause_min": 2.0, "symbol_pause_max": 6.0,
     "punct_delay_mult": 2.2, "newline_delay_mult": 3.0, "rhythm_variance": 35,
     "hotkey_start": "F8", "hotkey_pause": "F9", "hotkey_stop": "F10",
@@ -148,6 +149,64 @@ def add_to_history(mode, result):
     save_history_file(h)
 
 # ══════════════════════════════════════════════════════════════════════
+#  SYNONYM LOOKUP  — simple built-in map, no external deps
+# ══════════════════════════════════════════════════════════════════════
+_SYNONYMS = {
+    "good":["great","solid","nice","fine"],"bad":["poor","weak","rough","lousy"],
+    "big":["large","huge","major","wide"],"small":["tiny","little","minor","slim"],
+    "fast":["quick","rapid","swift","speedy"],"slow":["gradual","steady","gentle","lazy"],
+    "hard":["tough","firm","rigid","rough"],"easy":["simple","basic","smooth","light"],
+    "smart":["bright","sharp","clever","wise"],"dumb":["slow","dense","dim","thick"],
+    "happy":["glad","pleased","content","joyful"],"sad":["upset","down","low","blue"],
+    "angry":["mad","upset","furious","cross"],"scared":["afraid","nervous","uneasy","tense"],
+    "beautiful":["pretty","lovely","nice","gorgeous"],"ugly":["rough","plain","harsh","gross"],
+    "important":["key","major","serious","big"],"boring":["dull","flat","dry","bland"],
+    "interesting":["cool","neat","fun","wild"],"funny":["silly","goofy","wild","odd"],
+    "old":["aged","dated","worn","prior"],"new":["fresh","recent","latest","modern"],
+    "many":["lots","several","various","plenty"],"few":["some","a couple","barely any","limited"],
+    "very":["really","super","quite","pretty"],"also":["too","as well","plus","and"],
+    "however":["but","though","yet","still"],"therefore":["so","thus","hence","then"],
+    "because":["since","as","given that","seeing as"],"although":["even though","while","though","despite"],
+    "usually":["often","mostly","generally","typically"],"sometimes":["at times","now and then","occasionally","here and there"],
+    "always":["every time","all the time","constantly","forever"],"never":["not once","at no point","not ever","zero times"],
+    "shows":["proves","tells","reveals","makes clear"],"helps":["aids","supports","assists","makes easier"],
+    "uses":["applies","works with","relies on","takes advantage of"],"makes":["creates","builds","forms","produces"],
+    "gets":["receives","gains","picks up","ends up with"],"gives":["provides","offers","hands","passes"],
+    "said":["stated","noted","mentioned","pointed out"],"found":["discovered","noticed","saw","came across"],
+    "used":["applied","worked with","employed","took"],"changed":["shifted","moved","switched","altered"],
+    "increase":["grow","rise","go up","climb"],"decrease":["drop","fall","go down","shrink"],
+    "improve":["get better","boost","strengthen","upgrade"],"affect":["impact","influence","shape","touch"],
+    "allow":["let","permit","enable","give room for"],"prevent":["stop","block","keep from","avoid"],
+    "require":["need","call for","demand","take"],"include":["have","cover","contain","involve"],
+    "develop":["build","grow","create","work on"],"provide":["give","offer","supply","bring"],
+    "believe":["think","feel","figure","reckon"],"suggest":["hint","imply","point to","indicate"],
+    "explain":["describe","lay out","break down","go over"],"compare":["look at","weigh","contrast","measure against"],
+    "consider":["think about","look at","weigh","factor in"],"understand":["get","grasp","follow","see"],
+    "result":["outcome","effect","end result","what happens"],"reason":["cause","point","why","factor"],
+    "example":["case","instance","sample","like"],"idea":["thought","concept","point","notion"],
+    "problem":["issue","trouble","challenge","situation"],"solution":["answer","fix","way out","approach"],
+    "people":["folks","others","individuals","everyone"],"thing":["item","part","piece","aspect"],
+    "time":["period","moment","point","stretch"],"way":["method","approach","manner","means"],
+    "place":["area","spot","location","region"],"group":["set","bunch","collection","cluster"],
+    "part":["section","piece","bit","portion"],"point":["detail","factor","aspect","element"],
+    "work":["effort","task","job","activity"],"life":["living","existence","daily routine","experience"],
+    "society":["community","world","culture","people"],"government":["state","authorities","leadership","officials"],
+    "history":["past","background","record","story"],"science":["research","study","field","knowledge"],
+    "technology":["tech","tools","systems","advances"],"environment":["surroundings","ecosystem","world","nature"],
+    "education":["learning","schooling","training","studies"],"economy":["market","finances","trade","business"],
+}
+
+def get_synonym(word):
+    """Return a synonym for word if available, else None. Preserves capitalization."""
+    key = word.lower().rstrip(".,!?;:")
+    syns = _SYNONYMS.get(key)
+    if not syns: return None
+    syn = random.choice(syns)
+    if word[0].isupper(): syn = syn[0].upper() + syn[1:]
+    return syn
+
+
+# ══════════════════════════════════════════════════════════════════════
 #  TYPING ENGINE
 # ══════════════════════════════════════════════════════════════════════
 class TypingEngine:
@@ -198,7 +257,28 @@ class TypingEngine:
                     if iswc and not inw:
                         inw = True; wchars = []; wcount += 1; tw += 1
                         stutter = (wcount % 4 == 0) and (random.random() < cfg.get("stutter_chance", 40) / 100)
-                    elif not iswc and inw: inw = False; stutter = False
+                    elif not iswc and inw:
+                        # Word just finished — maybe do synonym swap
+                        finished_word = "".join(wchars)
+                        sw_chance = cfg.get("synonym_swap_chance", 15) / 100
+                        if finished_word and random.random() < sw_chance:
+                            syn = get_synonym(finished_word)
+                            if syn:
+                                # Pause like thinking, then backspace the word, type synonym
+                                swap_pause = cfg.get("synonym_swap_pause", 1.2) * (0.85 + random.random() * 0.3)
+                                self._isleep(swap_pause)
+                                if self._stop.is_set(): return
+                                # Backspace original word
+                                for _ in range(len(finished_word)):
+                                    self._key('', cfg)
+                                    time.sleep(base * (0.7 + random.random() * 0.3))
+                                if self._stop.is_set(): return
+                                # Type synonym
+                                for sc2 in syn:
+                                    self._key(sc2, cfg)
+                                    time.sleep(self._delay(base, sc2, cfg))
+                                if self._stop.is_set(): return
+                        inw = False; stutter = False
                     if inw: wchars.append(ch)
 
                     if stutter and inw:
@@ -463,14 +543,17 @@ def get_client():
     if not HAS_GROQ: raise RuntimeError("groq not installed — run install.bat")
     return Groq(api_key=api_key)
 
-def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=None):
+def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=None, extra_images=None):
     client = get_client()
     strict_note = ("Flag ANY answer that looks even slightly off, unclear, or potentially wrong."
         if strictness == "flag_all" else "Only flag answers that are clearly and definitively wrong.")
+    # Build image list: primary screenshot + any extra images
+    img_parts = [{"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}]
+    for ei in (extra_images or []):
+        if ei: img_parts.append({"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}})
     resp = client.chat.completions.create(
         model="meta-llama/llama-4-scout-17b-16e-instruct",
-        messages=[{"role":"user","content":[
-            {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}},
+        messages=[{"role":"user","content":img_parts + [
             {"type":"text","text":(
                 (("EXTRA CONTEXT (use this to help answer questions):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
                 "You are scanning a student's assignment screenshot. Read the ENTIRE screen carefully.\n\n"
@@ -526,12 +609,15 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
     if m: raw = m.group(0)
     return json.loads(raw)
 
-def ai_math(b64, examine_examples=False, extra_context=None):
+def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
     client = get_client()
+    # Build image list: primary screenshot + any extra images
+    img_parts = [{"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}]
+    for ei in (extra_images or []):
+        if ei: img_parts.append({"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}})
     resp = client.chat.completions.create(
         model="meta-llama/llama-4-scout-17b-16e-instruct",
-        messages=[{"role":"user","content":[
-            {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}},
+        messages=[{"role":"user","content":img_parts + [
             {"type":"text","text":(
                 (("EXTRA CONTEXT (use this to help solve problems):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
                 "Look at this screenshot. Find EVERY math or geometry problem visible.\n\n"
@@ -592,7 +678,7 @@ def ai_double_check(question):
     )
     return resp.choices[0].message.content.strip()
 
-def ai_qa(question, history, is_followup, extra_context=None):
+def ai_qa(question, history, is_followup, extra_context=None, extra_images=None):
     client = get_client()
     ctx_block = ""
     if extra_context:
@@ -603,9 +689,15 @@ def ai_qa(question, history, is_followup, extra_context=None):
         messages = list(history) + [{"role":"user","content":f"{question}{ctx_block}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]"}]
         max_tok = 400
     else:
+        if extra_images:
+            img_msg = [{"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}} for ei in extra_images if ei]
+            img_msg.append({"type":"text","text":question+ctx_block})
+            user_content = img_msg
+        else:
+            user_content = question+ctx_block
         messages = [
-            {"role":"system","content":"You are a sharp, direct assistant. Answer in ONE sentence, max 20 words. No intros, no filler. Just the answer."},
-            {"role":"user","content":question+ctx_block}
+            {"role":"system","content":"You are a sharp, direct assistant. Answer clearly and directly. If images are provided, analyze them to answer. No intros, no filler. Just the answer."},
+            {"role":"user","content":user_content}
         ]
         max_tok = 120
     resp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=messages, max_tokens=max_tok, temperature=0.4)
@@ -818,16 +910,16 @@ def _aot_watcher():
     # ── Polling loop ──
     while True:
         try:
-            # Skip entirely while user is dragging — SetWindowPos during drag causes crash
-            if not _is_dragging:
-                val = bool(cfg.get("always_on_top", True))
-                if HAS_WIN32 and val:
+            if not _is_dragging and bool(cfg.get("always_on_top", True)) and HAS_WIN32:
+                # Prefer cached hwnd — avoids expensive EnumWindows every 500ms
+                hwnd = _AOT_HWND
+                if not hwnd:
                     hwnd = _find_app_hwnd()
-                    if hwnd:
-                        _AOT_HWND = hwnd
-                        ctypes.windll.user32.SetWindowPos(
-                            hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
-                        )
+                    if hwnd: _AOT_HWND = hwnd
+                if hwnd:
+                    ctypes.windll.user32.SetWindowPos(
+                        hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
+                    )
         except Exception:
             pass
         time.sleep(0.5)
@@ -944,10 +1036,21 @@ def api_screenshot():
     hwnd = data.get("hwnd"); mode = data.get("mode","scan")
     strictness = data.get("strictness", cfg.get("scanner_wrong_answer_strictness","flag_all"))
     extra_context = data.get("extra_context", [])
+    extra_images = data.get("extra_images", [])   # list of base64 strings from user uploads
+    region = data.get("region")  # {x,y,w,h} as fraction 0-1 of screenshot, for region crop
     try:
-        img = capture_window(hwnd); b64 = img_to_b64(img)
+        img = capture_window(hwnd)
+        # Apply region crop if specified (fractions of full image)
+        if region:
+            iw, ih = img.size
+            x1 = int(region["x"] * iw); y1 = int(region["y"] * ih)
+            x2 = int((region["x"]+region["w"]) * iw); y2 = int((region["y"]+region["h"]) * ih)
+            x1,y1 = max(0,x1), max(0,y1); x2,y2 = min(iw,x2), min(ih,y2)
+            if x2-x1 > 10 and y2-y1 > 10:
+                img = img.crop((x1, y1, x2, y2))
+        b64 = img_to_b64(img)
         if mode == "math":
-            problems = ai_math(b64, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context)
+            problems = ai_math(b64, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context, extra_images=extra_images)
             for p in problems:
                 eq = p.get("graph_eq")
                 p["graph_b64"] = make_graph(eq) if (eq and cfg.get("math_show_graphs", True)) else None
@@ -958,11 +1061,26 @@ def api_screenshot():
             add_to_history("math", problems)
             return jsonify({"ok":True,"result":{"problems":problems}})
         else:
-            questions = ai_scan(b64, strictness, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context)
+            questions = ai_scan(b64, strictness, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context, extra_images=extra_images)
             add_to_history("scan", questions)
             return jsonify({"ok":True,"result":{"questions":questions}})
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()})
+
+@app_flask.route("/api/screenshot/preview", methods=["POST"])
+def api_screenshot_preview():
+    """Take a screenshot and return it as base64 for the region selector UI."""
+    data = request.json or {}
+    hwnd = data.get("hwnd")
+    try:
+        img = capture_window(hwnd)
+        # Downscale for preview
+        pw = 560; ph = int(img.height * pw / img.width)
+        img = img.resize((pw, ph), Image.LANCZOS)
+        b64 = img_to_b64(img)
+        return jsonify({"ok":True,"b64":b64,"w":pw,"h":ph})
+    except Exception as e:
+        return jsonify({"error":str(e)})
 
 @app_flask.route("/api/double_check", methods=["POST"])
 def api_double_check():
@@ -979,8 +1097,9 @@ def api_qa_route():
     history = data.get("history",[]); is_followup = bool(data.get("followup", False))
     extra_context = data.get("extra_context", [])
     if not question: return jsonify({"error":"No question"})
+    extra_images = data.get("extra_images", [])
     try:
-        answer, new_history = ai_qa(question, history, is_followup, extra_context)
+        answer, new_history = ai_qa(question, history, is_followup, extra_context, extra_images)
         return jsonify({"answer":answer,"history":new_history})
     except Exception as e: return jsonify({"error":str(e)})
 
@@ -991,9 +1110,21 @@ def api_humanize():
     action = data.get("action","humanize")  # humanize | longer | shorter
     if not text: return jsonify({"error":"No text"})
     client = get_client()
-    p_humanize = f"Rewrite this to sound like a normal person wrote it. Keep the exact same meaning. Simple, natural, not robotic. No extra fluff. Give a slightly different version each time.\n\nText: {text}\n\nRewritten:"
-    p_longer   = f"Make this longer and more detailed while keeping the same meaning and natural tone. Don't add filler, add actual useful content.\n\nText: {text}\n\nExpanded:"
-    p_shorter  = f"Make this shorter and more concise while keeping the full meaning. Cut fluff only.\n\nText: {text}\n\nShortened:"
+    p_humanize = f"""Rewrite this so it sounds like a regular student wrote it — casual, simple, natural. Keep the exact meaning but use everyday words a teenager would actually say. AVOID: words like "descending", "ascending", "notably", "furthermore", "exemplifies", "illuminates", "underscores", "demonstrates", "pivotal", "crucial", "significant", "delve", "realm", "foster", "leverage", "utilize", "facilitate", "encompasses", "multifaceted", "nuanced". Use short sentences. Sound slightly imperfect like a real student. Give a slightly different version each time. Return only the rewritten text, nothing else.
+
+Text: {text}
+
+Rewritten:"""
+    p_longer   = f"""Make this longer by adding more explanation and detail. Keep the same casual student tone. Sound like a student who is adding more of their thoughts. Don't use fancy vocabulary. Return only the expanded text, nothing else.
+
+Text: {text}
+
+Expanded:"""
+    p_shorter  = f"""Make this shorter and more to the point. Keep the core meaning. Even if it's already short, find a way to trim it further — cut any redundant words. If it's down to just a few words, keep those core words only. Return only the shortened text, nothing else.
+
+Text: {text}
+
+Shortened:"""
     prompts = {"humanize": p_humanize, "longer": p_longer, "shorter": p_shorter}
     try:
         resp = client.chat.completions.create(
@@ -1422,14 +1553,18 @@ def _strip_titlebar_later():
 
     _AOT_HWND = hwnd
 
-    # Aggressively re-strip for 15s to catch Edge's post-load frame redraw
+    # Aggressively re-strip for 15s, then every 2s forever
     aggressive_until = time.time() + 15
     while True:
         try:
             hwnd = _find_app_hwnd() or _AOT_HWND
             if hwnd:
                 _AOT_HWND = hwnd
+                # Set topmost FIRST before stripping caption — order matters
+                if bool(cfg.get("always_on_top", True)):
+                    _set_hwnd_topmost(hwnd, True)
                 _apply_frame_strip(hwnd)
+                # Set topmost AGAIN after frame change — frame strip can reset z-order
                 if bool(cfg.get("always_on_top", True)):
                     _set_hwnd_topmost(hwnd, True)
         except Exception: pass
@@ -1501,8 +1636,7 @@ def main():
                     threading.Thread(target=lambda: (time.sleep(0.1), os._exit(0)), daemon=True).start()
 
             def _on_loaded():
-                # Page loaded — strip the titlebar now and keep re-stripping
-                # pywebview redraws the Win32 frame multiple times during load
+                # Page loaded — strip titlebar now (pywebview redraws frame after load)
                 threading.Thread(target=_strip_titlebar_later, daemon=True).start()
 
             _webview_window.events.loaded += _on_loaded
