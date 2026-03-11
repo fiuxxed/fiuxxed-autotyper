@@ -25,6 +25,11 @@
 4. **Unzip that folder by right clicking and extracting it (recommended to use WinRAR or 7zip.)**
 5. **Run install.bat once, then run.bat to launch anddd done! :D**
 
+# Updating Process: 
+1. **Wait until you see any recently changed major files in the github**
+2. **If you do, delete the old zip and **ALSO** it's unzipped counterpart.** (or keep the old one idgaf)
+3.**And then just follow step 3-5 from the Installation Process.** No you do not have to run the install.bat again UNLESS you deleted python or something.
+
 (Requires a free Groq API key (set in settings in-app.))
 
 
