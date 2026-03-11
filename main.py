@@ -547,7 +547,6 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
     client = get_client()
     strict_note = ("Flag ANY answer that looks even slightly off, unclear, or potentially wrong."
         if strictness == "flag_all" else "Only flag answers that are clearly and definitively wrong.")
-    # Build image list: primary screenshot + any extra images
     img_parts = [{"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}]
     for ei in (extra_images or []):
         if ei: img_parts.append({"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}})
@@ -558,36 +557,65 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
                 (("EXTRA CONTEXT (use this to help answer questions):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
                 "You are scanning a student's assignment screenshot. Read the ENTIRE screen carefully.\n\n"
 
-                "── GOOGLE DOCS / WORD / WORKSHEET LAYOUTS ──\n"
-                "These assignments often have a TWO-COLUMN or split layout:\n"
-                "  SOURCE SIDE: reading passage, article, instructions — this is INFORMATION, not a question\n"
-                "  ANSWER SIDE: labeled fields like 'Answer:', 'Main Idea:', 'Summary:', 'Key Details:' followed by a blank, cursor '|', or empty space\n\n"
-                "CRITICAL RULE: 'Answer: |' or 'Answer: ___' is ALWAYS an unanswered question.\n"
-                "  → Find the CLOSEST piece of source text (heading, paragraph, passage) that the answer field relates to\n"
-                "  → Generate a proper answer FROM that source content — do NOT copy the whole passage\n"
-                "  → For 'Main Idea': write a 1-2 sentence summary of the MAIN POINT of the nearby passage\n"
-                "  → For 'Summary': condense the nearby passage into 2-3 sentences\n"
-                "  → For 'Key Details': list the most important specific facts from the passage\n"
-                "  → A cursor '|' after a label = definitely unanswered — answered=false\n"
-                "  → The Google Docs toolbar/menu bar at the top is NOT content — ignore it\n"
-                "  → The gray area outside the white document page is NOT content — ignore it\n\n"
+                "══ PLATFORM DETECTION — identify which platform this is first ══\n\n"
+
+                "── GOOGLE DOCS / WORD / WORKSHEET ──\n"
+                "Layout: white document page centered on gray background. Toolbar at top (File/Edit/View/Insert etc) is NOT content.\n"
+                "TWO-COLUMN split is very common: SOURCE SIDE (reading passage/article) | ANSWER SIDE (labeled fields).\n"
+                "ANSWER FIELDS to detect:\n"
+                "  • 'Answer: |' or 'Answer: ___' = unanswered (cursor or blank line)\n"
+                "  • 'Main Idea:', 'Summary:', 'Key Details:', 'Response:', 'Evidence:', 'Explanation:' followed by blank/cursor\n"
+                "  • Underlined blank spaces '________' = fill-in-the-blank\n"
+                "  • Empty table cells next to a question label\n"
+                "  • Highlighted text boxes (yellow/green highlight on the field label) = where to write\n"
+                "ANSWER LOGIC:\n"
+                "  → Find the CLOSEST source text (heading/paragraph) the field relates to\n"
+                "  → 'Main Idea' = 1-2 sentence summary of that passage's central point\n"
+                "  → 'Summary' = condense passage into 2-3 sentences\n"
+                "  → 'Key Details' = bullet the most important specific facts\n"
+                "  → 'Evidence' = direct quote or paraphrase supporting the claim\n"
+                "  → Fill-in-the-blank = one word or short phrase that fits grammatically\n\n"
+
+                "── GOOGLE FORMS ──\n"
+                "Layout: white cards with purple/blue accents, question title at top of each card.\n"
+                "Question types:\n"
+                "  • RADIO BUTTONS (○ filled ● = selected, ○ empty = not selected) → MULTIPLE_CHOICE\n"
+                "  • CHECKBOXES (☐ empty, ☑ checked) → MULTIPLE_CHOICE (select all that apply)\n"
+                "  • DROPDOWN (shows selected value or 'Choose') → MULTIPLE_CHOICE\n"
+                "  • SHORT ANSWER / PARAGRAPH (text input box, empty or filled) → WRITTEN\n"
+                "  • LINEAR SCALE (1-5 or 1-10 scale) → MULTIPLE_CHOICE\n"
+                "  • A filled radio/checkbox = answered. An empty text box = unanswered.\n"
+                "  • Required questions marked with * (red asterisk)\n\n"
+
+                "── GOOGLE CLASSROOM / ASSIGNMENT SHEETS ──\n"
+                "May show: assignment title, instructions block, then numbered questions below.\n"
+                "Student responses appear in text boxes or typed inline after the question.\n"
+                "Blank after question number = unanswered even if there's a cursor.\n\n"
+
+                "── MATCHING ACTIVITIES ──\n"
+                "Two columns: Column A (terms) and Column B (definitions/answers).\n"
+                "Lines or letters/numbers connect them. Unmatched items = unanswered.\n"
+                "Represent each match as a separate question: 'Match: [term]' → answer is the matching definition.\n\n"
+
+                "── TABLES / GRIDS ──\n"
+                "Each empty table cell adjacent to a row/column header = a question.\n"
+                "question_label = the row header. question = what's being asked per column header.\n\n"
 
                 "── HOW TO FIND ALL QUESTIONS ──\n"
-                "- Numbered items: '1.', '2.', 'Q1', 'a)', 'b)' — all questions\n"
-                "- Labeled answer fields: 'Answer:', 'Main Idea:', 'Summary:', 'Fill in the blank', 'Response:' etc.\n"
-                "- Empty boxes, blank lines, or text fields waiting to be filled\n"
-                "- Highlighted labels (yellow, green, etc.) often mark where to write the answer\n"
-                "- Circled numbers ① ② ③ are always question numbers\n"
-                "- Geometric diagrams next to numbers = geometry questions\n"
+                "- Numbered: '1.', '2.', 'Q1', 'a)', 'b)', '①②③' — all questions\n"
+                "- Labeled fields: 'Answer:', 'Main Idea:', 'Summary:', 'Fill in:', 'Response:'\n"
+                "- Empty boxes, blank lines, underlines, empty table cells\n"
+                "- Yellow/green highlighted labels = answer goes here\n"
+                "- Geometric diagrams next to numbers = geometry/math questions\n"
                 "- Include ALL questions even if already answered\n\n"
 
                 "── FOR EACH QUESTION ──\n"
-                "1. question_label: the label/number if visible (e.g. 'Main Idea', '1.', 'Q2') — null if none\n"
-                "2. question: what is being asked. For passage-based answer boxes, write e.g. 'What is the main idea of the passage about Enlightenment Thinkers?'\n"
+                "1. question_label: label/number if visible (e.g. 'Main Idea', '1.', 'Q2') — null if none\n"
+                "2. question: what is being asked. For passage-based boxes: 'What is the main idea of the passage about [topic]?'\n"
                 "3. type: MULTIPLE_CHOICE, TRUE_FALSE, or WRITTEN\n"
-                "4. answered: true only if the person has ALREADY written a real answer (not just a cursor or empty field)\n"
+                "4. answered: true ONLY if a real answer is already written (not just cursor, underline, or empty field)\n"
                 "5. user_answer: what they wrote (null if unanswered)\n"
-                "6. correct_answer: YOUR answer based on reading the full document/passage. For 'Main Idea' boxes — write a complete 1-2 sentence main idea answer using the passage content\n"
+                "6. correct_answer: YOUR complete answer using passage/document content\n"
                 "7. is_correct: true/false/null (null if unanswered)\n"
                 f"8. {strict_note}\n"
                 "9. correction: if wrong, the corrected answer in the same format\n"
@@ -602,7 +630,7 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
                 "If no questions found: []"
             )}
         ]}],
-        max_tokens=3000, temperature=0.1
+        max_tokens=3500, temperature=0.1
     )
     raw = re.sub(r"```(?:json)?|```", "", resp.choices[0].message.content.strip()).strip()
     m = re.search(r'\[.*\]', raw, re.DOTALL)
@@ -729,9 +757,16 @@ _windows_cache = []
 _AOT_HWND    = None   # cached window handle
 _aot_thread  = None   # background watcher thread
 _is_dragging = False  # pause AOT watcher during window drag to prevent crash
+# Keep ctypes callback + hook alive at module level — local vars get GC'd and silently kill the hook
+_winevent_proc = None
+_winevent_hook = None
 
-HWND_TOPMOST    = -1
-HWND_NOTOPMOST  = -2
+# Must be ctypes.c_void_p(-1) / c_void_p(-2) — NOT raw -1/-2 integers.
+# On 64-bit Python, ctypes passes raw -1 as 0x00000000FFFFFFFF (32-bit truncated),
+# which Windows rejects as an invalid handle and silently fails. c_void_p forces
+# the full 64-bit pointer value 0xFFFFFFFFFFFFFFFF that Windows actually expects.
+HWND_TOPMOST    = ctypes.c_void_p(-1)
+HWND_NOTOPMOST  = ctypes.c_void_p(-2)
 SWP_NOMOVE      = 0x0002
 SWP_NOSIZE      = 0x0001
 SWP_NOACTIVATE  = 0x0010
@@ -833,33 +868,43 @@ def apply_always_on_top(val):
             _set_hwnd_topmost(hwnd, on_top)
 
 def apply_opacity(val):
-    """Set window opacity (0-100) using win32 layered window."""
+    """Set window opacity (0-100) using win32 layered window.
+    IMPORTANT: only add WS_EX_LAYERED when val < 100. Adding it at full opacity
+    triggers a Chromium/WebView2 bug where native <select> dropdowns detach from
+    the DOM and render behind the app window."""
     if not HAS_WIN32: return
     hwnd = _AOT_HWND or _find_app_hwnd()
     if not hwnd: return
     try:
-        GWL_EXSTYLE = -20
+        GWL_EXSTYLE   = -20
         WS_EX_LAYERED = 0x00080000
-        LWA_ALPHA = 0x00000002
+        LWA_ALPHA     = 0x00000002
         style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
-        alpha = int(max(0, min(100, val)) / 100 * 255)
-        ctypes.windll.user32.SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)
+        if int(val) >= 100:
+            # Remove layered style entirely at full opacity — fixes dropdown rendering
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style & ~WS_EX_LAYERED)
+        else:
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
+            alpha = int(max(0, min(99, val)) / 100 * 255)
+            ctypes.windll.user32.SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)
     except Exception: pass
 
 def _aot_watcher():
     """
     Two-pronged always-on-top approach:
-    1. SetWinEventHook — fires INSTANTLY whenever any window becomes foreground,
-       immediately re-asserts topmost on ours before the user even notices
-    2. Polling fallback every 500ms as a safety net
-    This combination is how apps like Task Manager stay on top reliably.
+    1. SetWinEventHook — fires INSTANTLY whenever any window becomes foreground
+    2. Polling fallback every 200ms as a safety net
+
+    THREE bugs previously killed this silently:
+    - GC bug: _winevent_proc/_winevent_hook must be module-level globals (fixed prev session)
+    - Pointer truncation: HWND_TOPMOST must be ctypes.c_void_p(-1), not raw -1 (now fixed)
+    - Thread mismatch: SetWinEventHook requires the message pump to run on the SAME thread
+      that registered the hook. Spawning a separate _pump thread means events are never
+      delivered. Fix: use PeekMessageW inline in the polling loop on this same thread.
     """
-    global _AOT_HWND
+    global _AOT_HWND, _winevent_proc, _winevent_hook
     time.sleep(2.5)
 
-    # ── Try to set up a WinEvent hook for instant response ──
-    hooked = False
     if HAS_WIN32:
         try:
             import ctypes.wintypes as wt
@@ -870,13 +915,13 @@ def _aot_watcher():
 
             WinEventProc = ctypes.WINFUNCTYPE(
                 None,
-                ctypes.wintypes.HANDLE,  # hWinEventHook
-                ctypes.wintypes.DWORD,   # event
-                ctypes.wintypes.HWND,    # hwnd
-                ctypes.wintypes.LONG,    # idObject
-                ctypes.wintypes.LONG,    # idChild
-                ctypes.wintypes.DWORD,   # dwEventThread
-                ctypes.wintypes.DWORD,   # dwmsEventTime
+                ctypes.wintypes.HANDLE,
+                ctypes.wintypes.DWORD,
+                ctypes.wintypes.HWND,
+                ctypes.wintypes.LONG,
+                ctypes.wintypes.LONG,
+                ctypes.wintypes.DWORD,
+                ctypes.wintypes.DWORD,
             )
 
             def _on_foreground(hHook, event, hwnd, idObj, idChild, thread, time_ms):
@@ -885,38 +930,30 @@ def _aot_watcher():
                         return
                     our = _AOT_HWND or _find_app_hwnd()
                     if our and hwnd != our:
-                        # Something else just came to front — immediately re-pin ours
                         ctypes.windll.user32.SetWindowPos(
                             our, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
                         )
                 except Exception:
                     pass
 
-            _proc = WinEventProc(_on_foreground)
-
-            hook = user32.SetWinEventHook(
+            # Module-level globals — prevents GC from collecting the callback
+            _winevent_proc = WinEventProc(_on_foreground)
+            # Hook registered on THIS thread — message pump must also run on this thread
+            _winevent_hook = user32.SetWinEventHook(
                 EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
-                None, _proc, 0, 0, WINEVENT_OUTOFCONTEXT
+                None, _winevent_proc, 0, 0, WINEVENT_OUTOFCONTEXT
             )
-
-            if hook:
-                hooked = True
-                # Need a message pump to receive hook callbacks
-                def _pump():
-                    msg = ctypes.wintypes.MSG()
-                    while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) != 0:
-                        user32.TranslateMessage(ctypes.byref(msg))
-                        user32.DispatchMessageW(ctypes.byref(msg))
-                pump_thread = threading.Thread(target=_pump, daemon=True)
-                pump_thread.start()
         except Exception:
-            hooked = False
+            pass
 
-    # ── Polling loop ──
+    # ── Combined polling + message pump loop on the SAME thread ──
+    # PeekMessageW is non-blocking: drains any pending hook messages then returns
+    # immediately so the sleep(0.2) polling cadence is maintained.
+    PM_REMOVE = 0x0001
+    _msg = ctypes.wintypes.MSG() if HAS_WIN32 else None
     while True:
         try:
             if not _is_dragging and bool(cfg.get("always_on_top", True)) and HAS_WIN32:
-                # Prefer cached hwnd — avoids expensive EnumWindows every 500ms
                 hwnd = _AOT_HWND
                 if not hwnd:
                     hwnd = _find_app_hwnd()
@@ -925,9 +962,16 @@ def _aot_watcher():
                     ctypes.windll.user32.SetWindowPos(
                         hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
                     )
+            # Drain the message queue on this thread so WinEvent hook callbacks fire
+            if HAS_WIN32 and _winevent_hook and _msg is not None:
+                while ctypes.windll.user32.PeekMessageW(
+                    ctypes.byref(_msg), None, 0, 0, PM_REMOVE
+                ):
+                    ctypes.windll.user32.TranslateMessage(ctypes.byref(_msg))
+                    ctypes.windll.user32.DispatchMessageW(ctypes.byref(_msg))
         except Exception:
             pass
-        time.sleep(0.5)
+        time.sleep(0.2)
 
 def start_aot_watcher():
     global _aot_thread
@@ -1000,9 +1044,32 @@ def api_autotype_start():
     text = data.get("text","").strip()
     if not text: return jsonify({"error":"No text provided"})
     cfg.update({k: v for k, v in data.items() if k in DEFAULTS})
+    total_reps  = max(1, int(cfg.get("repeat_count", 1)))
+    repeat_delay = float(cfg.get("repeat_delay", 2.0))
+    rep_state = {"current": 1}  # mutable box
+
     _type_state.update({"phase":"typing","progress":0,"status":"Typing..."})
-    def on_prog(idx, total, pct): _type_state.update({"progress":pct,"status":f"Typing… {pct}%  ({idx}/{total} chars)"})
-    def on_done(): _type_state.update({"phase":"done","progress":100,"status":"✓ All done!"})
+
+    def on_prog(idx, total, pct):
+        rep_tag = f"  [{rep_state['current']}/{total_reps}]" if total_reps > 1 else ""
+        _type_state.update({"progress":pct,"status":f"Typing… {pct}%  ({idx}/{total} chars){rep_tag}"})
+
+    def on_done():
+        if rep_state["current"] >= total_reps or engine._stop.is_set():
+            _type_state.update({"phase":"done","progress":100,"status":"✓ All done!"})
+            return
+        # More repeats to go — wait then re-fire
+        rep_state["current"] += 1
+        def _delayed():
+            for _ in range(int(repeat_delay * 20)):   # 50ms ticks
+                if engine._stop.is_set(): return
+                time.sleep(0.05)
+            if engine._stop.is_set(): return
+            _type_state.update({"phase":"typing","progress":0,
+                "status":f"Repeating… ({rep_state['current']}/{total_reps})"})
+            engine.start(text, cfg, on_prog, on_done, on_err)
+        threading.Thread(target=_delayed, daemon=True).start()
+
     def on_err(e): _type_state.update({"phase":"idle","status":f"Error: {e}"})
     engine.start(text, cfg, on_prog, on_done, on_err)
     return jsonify({"ok": True})
@@ -1020,6 +1087,19 @@ def api_status(): return jsonify(_type_state)
 def api_windows():
     global _windows_cache
     if not HAS_WIN32: return jsonify({"error":"pywin32 not installed","windows":[]})
+
+    # Get our own PID so we can exclude the app window from the list
+    our_pid = os.getpid()
+    # Also collect child PIDs (Edge app window launched by us)
+    our_pids = {our_pid}
+    try:
+        our_proc = psutil.Process(our_pid)
+        for child in our_proc.children(recursive=True):
+            our_pids.add(child.pid)
+    except Exception: pass
+    # Also exclude by _edge_pid if set
+    if _edge_pid: our_pids.add(_edge_pid)
+
     wins = []
     def cb(hwnd, _):
         if not win32gui.IsWindowVisible(hwnd): return
@@ -1027,11 +1107,22 @@ def api_windows():
         if not title or len(title) < 2: return
         try:
             _, pid = win32process.GetWindowThreadProcessId(hwnd)
+            # Skip our own app window entirely
+            if pid in our_pids: return
             name = psutil.Process(pid).name().lower().replace(".exe","")
         except Exception: name = "unknown"
-        wins.append({"hwnd":hwnd,"title":title,"name":name,"is_browser":any(b in name for b in BROWSERS)})
+        is_browser = any(b in name for b in BROWSERS)
+        wins.append({"hwnd":hwnd,"title":title,"name":name,"is_browser":is_browser})
     win32gui.EnumWindows(cb, None)
-    wins.sort(key=lambda x: x["title"].lower())
+
+    # Sort: non-browsers first (alphabetical), then browsers (alphabetical)
+    # This puts Google Docs, Word, etc. at the top and YouTube tabs at the bottom
+    wins.sort(key=lambda x: (1 if x["is_browser"] else 0, x["title"].lower()))
+
+    # Mark the best suggestion — first non-browser, or first browser if nothing else
+    if wins:
+        wins[0]["suggested"] = True
+
     _windows_cache = wins
     return jsonify({"windows": wins})
 
@@ -1074,16 +1165,17 @@ def api_screenshot():
 
 @app_flask.route("/api/screenshot/preview", methods=["POST"])
 def api_screenshot_preview():
-    """Take a screenshot and return it as base64 for the region selector UI."""
+    """Take a screenshot and return full-res b64 for region selector.
+    The UI displays it scaled down via CSS but fractions are computed against
+    the naturalWidth/naturalHeight of the img element (= actual pixel dims here).
+    """
     data = request.json or {}
     hwnd = data.get("hwnd")
     try:
         img = capture_window(hwnd)
-        # Downscale for preview
-        pw = 560; ph = int(img.height * pw / img.width)
-        img = img.resize((pw, ph), Image.LANCZOS)
+        ow, oh = img.size
         b64 = img_to_b64(img)
-        return jsonify({"ok":True,"b64":b64,"w":pw,"h":ph})
+        return jsonify({"ok":True,"b64":b64,"w":ow,"h":oh})
     except Exception as e:
         return jsonify({"error":str(e)})
 
@@ -1465,8 +1557,25 @@ def run_flask():
     import logging; logging.getLogger("werkzeug").setLevel(logging.ERROR)
     app_flask.run(host="127.0.0.1", port=7890, debug=False, use_reloader=False, threaded=True)
 
+def _clear_edge_locks():
+    """
+    Delete stale SingletonLock / SingletonCookie files from the Edge profile.
+    When the app is force-closed these lock files remain and cause Edge to either
+    crash on relaunch or refuse to open — which can also crash Windows Explorer
+    due to shell extensions. Must run before launching Edge.
+    """
+    profile_dir = os.path.join(BASE, ".edge_profile")
+    for fname in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+        for root, dirs, files in os.walk(profile_dir):
+            if fname in files:
+                try: os.remove(os.path.join(root, fname))
+                except Exception: pass
+
 def _find_browser():
-    import winreg
+    try:
+        import winreg
+    except ImportError:
+        return None
     candidates = [
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
@@ -1485,6 +1594,7 @@ def _find_browser():
     return None
 
 def _launch_app_window(url):
+    _clear_edge_locks()   # remove stale lock files before launch — prevents crash/hang
     exe = _find_browser()
     if not exe: return None
     profile_dir = os.path.join(BASE, ".edge_profile"); os.makedirs(profile_dir, exist_ok=True)
