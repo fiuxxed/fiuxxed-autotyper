@@ -7,6 +7,44 @@ BASE      = os.path.dirname(os.path.abspath(__file__))
 SAVE_FILE = os.path.join(BASE, "settings.json")
 WEB_DIR   = os.path.join(BASE, "web")
 
+# ── Global error log ─────────────────────────────────────────────────
+LOG_FILE = os.path.join(BASE, "error.log")
+
+def _log(msg):
+    """Write msg to terminal and error.log with a timestamp."""
+    line = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
+    print(line, flush=True)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+
+def _log_exc(label, exc=None):
+    """Log a labelled exception with full traceback."""
+    _log(f"ERROR — {label}: {exc if exc else ''}")
+    tb = traceback.format_exc()
+    if tb.strip() != "NoneType: None":
+        for line in tb.splitlines():
+            _log("  " + line)
+
+# Catch any unhandled exception on any thread
+def _unhandled_thread_exc(args):
+    _log_exc(f"Unhandled exception in thread '{args.thread.name}'", args.exc_value)
+
+threading.excepthook = _unhandled_thread_exc
+
+# Catch any unhandled exception on the main thread
+def _unhandled_exc(exc_type, exc_value, exc_tb):
+    _log(f"FATAL unhandled exception: {exc_type.__name__}: {exc_value}")
+    for line in traceback.format_tb(exc_tb):
+        _log("  " + line.rstrip())
+    sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+sys.excepthook = _unhandled_exc
+
+_log("AutoTyper starting up")
+
 DEFAULTS = {
     "text": "", "wpm": 80, "countdown": 5,
     "repeat_count": 1, "repeat_delay": 2.0,
@@ -483,12 +521,45 @@ def capture_window(hwnd=None):
         rect = win32gui.GetWindowRect(hwnd)
         x1, y1, x2, y2 = rect; w = x2-x1; h = y2-y1
         if w < 10 or h < 10: raise RuntimeError("Window too small")
-        region = {"top": y1, "left": x1, "width": w, "height": h}
+
+        # Use PrintWindow with PW_RENDERFULLCONTENT (flag=3) so GPU-accelerated apps
+        # like Discord, Chrome, and games render correctly instead of returning a black bitmap.
+        # PW_RENDERFULLCONTENT = 0x2, combined with PW_CLIENTONLY=0x1 gives flag 3.
+        # Fall back to mss screen-grab if PrintWindow returns a blank (all-zero) result.
+        PW_RENDERFULLCONTENT = 3
+        img = None
+        try:
+            import win32ui, win32con
+            hdc_src  = ctypes.windll.user32.GetDC(hwnd)
+            hdc_dst  = win32ui.CreateDCFromHandle(hdc_src)
+            bmp_dc   = hdc_dst.CreateCompatibleDC()
+            bmp      = win32ui.CreateBitmap()
+            bmp.CreateCompatibleBitmap(hdc_dst, w, h)
+            bmp_dc.SelectObject(bmp)
+            # PW_RENDERFULLCONTENT forces the DWM compositor to copy GPU-rendered content
+            result = ctypes.windll.user32.PrintWindow(hwnd, bmp_dc.GetSafeHdc(), PW_RENDERFULLCONTENT)
+            bmp_info = bmp.GetInfo()
+            bmp_bits = bmp.GetBitmapBits(True)
+            bmp_dc.DeleteDC(); hdc_dst.DeleteDC()
+            ctypes.windll.user32.ReleaseDC(hwnd, hdc_src)
+            win32ui.DeleteObject(bmp.GetHandle())
+            if result and any(b != 0 for b in bmp_bits[:512]):
+                img = Image.frombuffer("RGB", (bmp_info["bmWidth"], bmp_info["bmHeight"]),
+                                       bmp_bits, "raw", "BGRX", 0, 1)
+        except Exception:
+            pass
+
+        # Fallback: mss screen-grab (fails for minimized/occluded GPU windows)
+        if img is None:
+            region = {"top": y1, "left": x1, "width": w, "height": h}
+            with mss.mss() as sct:
+                raw = sct.grab(region)
+                img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
     else:
-        with mss.mss() as sct: region = sct.monitors[1]
-    with mss.mss() as sct:
-        raw = sct.grab(region)
-        img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
+        with mss.mss() as sct:
+            region = sct.monitors[1]
+            raw = sct.grab(region)
+            img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
     img = img.convert("RGB")
     if img.width < 1200:
         scale = 1200 / img.width
@@ -857,21 +928,16 @@ def _set_hwnd_topmost(hwnd, on_top):
         pass
 
 def apply_always_on_top(val):
-    """Called whenever the setting changes — immediately applies it."""
-    global _AOT_HWND
+    """Called whenever the setting changes — immediately applies it via native webview property."""
     on_top = bool(val)
-    # Use win32 only — thread-safe. Never touch _webview_window from a Flask thread.
-    if HAS_WIN32:
-        hwnd = _AOT_HWND or _find_app_hwnd()
-        if hwnd:
-            _AOT_HWND = hwnd
-            _set_hwnd_topmost(hwnd, on_top)
+    if _webview_window:
+        try:
+            _webview_window.on_top = on_top
+        except Exception: pass
 
 def apply_opacity(val):
     """Set window opacity (0-100) using win32 layered window.
-    IMPORTANT: only add WS_EX_LAYERED when val < 100. Adding it at full opacity
-    triggers a Chromium/WebView2 bug where native <select> dropdowns detach from
-    the DOM and render behind the app window."""
+    Always keeps WS_EX_LAYERED applied to prevent Chromium dropdown rendering bug."""
     if not HAS_WIN32: return
     hwnd = _AOT_HWND or _find_app_hwnd()
     if not hwnd: return
@@ -880,103 +946,10 @@ def apply_opacity(val):
         WS_EX_LAYERED = 0x00080000
         LWA_ALPHA     = 0x00000002
         style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-        if int(val) >= 100:
-            # Remove layered style entirely at full opacity — fixes dropdown rendering
-            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style & ~WS_EX_LAYERED)
-        else:
-            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
-            alpha = int(max(0, min(99, val)) / 100 * 255)
-            ctypes.windll.user32.SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
+        alpha = int(max(0, min(100, val)) / 100 * 255)
+        ctypes.windll.user32.SetLayeredWindowAttributes(hwnd, 0, alpha, LWA_ALPHA)
     except Exception: pass
-
-def _aot_watcher():
-    """
-    Two-pronged always-on-top approach:
-    1. SetWinEventHook — fires INSTANTLY whenever any window becomes foreground
-    2. Polling fallback every 200ms as a safety net
-
-    THREE bugs previously killed this silently:
-    - GC bug: _winevent_proc/_winevent_hook must be module-level globals (fixed prev session)
-    - Pointer truncation: HWND_TOPMOST must be ctypes.c_void_p(-1), not raw -1 (now fixed)
-    - Thread mismatch: SetWinEventHook requires the message pump to run on the SAME thread
-      that registered the hook. Spawning a separate _pump thread means events are never
-      delivered. Fix: use PeekMessageW inline in the polling loop on this same thread.
-    """
-    global _AOT_HWND, _winevent_proc, _winevent_hook
-    time.sleep(2.5)
-
-    if HAS_WIN32:
-        try:
-            import ctypes.wintypes as wt
-            user32 = ctypes.windll.user32
-
-            EVENT_SYSTEM_FOREGROUND = 0x0003
-            WINEVENT_OUTOFCONTEXT   = 0x0000
-
-            WinEventProc = ctypes.WINFUNCTYPE(
-                None,
-                ctypes.wintypes.HANDLE,
-                ctypes.wintypes.DWORD,
-                ctypes.wintypes.HWND,
-                ctypes.wintypes.LONG,
-                ctypes.wintypes.LONG,
-                ctypes.wintypes.DWORD,
-                ctypes.wintypes.DWORD,
-            )
-
-            def _on_foreground(hHook, event, hwnd, idObj, idChild, thread, time_ms):
-                try:
-                    if not bool(cfg.get("always_on_top", True)):
-                        return
-                    our = _AOT_HWND or _find_app_hwnd()
-                    if our and hwnd != our:
-                        ctypes.windll.user32.SetWindowPos(
-                            our, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
-                        )
-                except Exception:
-                    pass
-
-            # Module-level globals — prevents GC from collecting the callback
-            _winevent_proc = WinEventProc(_on_foreground)
-            # Hook registered on THIS thread — message pump must also run on this thread
-            _winevent_hook = user32.SetWinEventHook(
-                EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
-                None, _winevent_proc, 0, 0, WINEVENT_OUTOFCONTEXT
-            )
-        except Exception:
-            pass
-
-    # ── Combined polling + message pump loop on the SAME thread ──
-    # PeekMessageW is non-blocking: drains any pending hook messages then returns
-    # immediately so the sleep(0.2) polling cadence is maintained.
-    PM_REMOVE = 0x0001
-    _msg = ctypes.wintypes.MSG() if HAS_WIN32 else None
-    while True:
-        try:
-            if not _is_dragging and bool(cfg.get("always_on_top", True)) and HAS_WIN32:
-                hwnd = _AOT_HWND
-                if not hwnd:
-                    hwnd = _find_app_hwnd()
-                    if hwnd: _AOT_HWND = hwnd
-                if hwnd:
-                    ctypes.windll.user32.SetWindowPos(
-                        hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_FLAGS
-                    )
-            # Drain the message queue on this thread so WinEvent hook callbacks fire
-            if HAS_WIN32 and _winevent_hook and _msg is not None:
-                while ctypes.windll.user32.PeekMessageW(
-                    ctypes.byref(_msg), None, 0, 0, PM_REMOVE
-                ):
-                    ctypes.windll.user32.TranslateMessage(ctypes.byref(_msg))
-                    ctypes.windll.user32.DispatchMessageW(ctypes.byref(_msg))
-        except Exception:
-            pass
-        time.sleep(0.2)
-
-def start_aot_watcher():
-    global _aot_thread
-    _aot_thread = threading.Thread(target=_aot_watcher, daemon=True)
-    _aot_thread.start()
 
 def _trigger_start():
     if _type_state["phase"] in ("idle","done"):
@@ -1088,43 +1061,58 @@ def api_windows():
     global _windows_cache
     if not HAS_WIN32: return jsonify({"error":"pywin32 not installed","windows":[]})
 
-    # Get our own PID so we can exclude the app window from the list
-    our_pid = os.getpid()
-    # Also collect child PIDs (Edge app window launched by us)
-    our_pids = {our_pid}
     try:
-        our_proc = psutil.Process(our_pid)
-        for child in our_proc.children(recursive=True):
-            our_pids.add(child.pid)
-    except Exception: pass
-    # Also exclude by _edge_pid if set
-    if _edge_pid: our_pids.add(_edge_pid)
-
-    wins = []
-    def cb(hwnd, _):
-        if not win32gui.IsWindowVisible(hwnd): return
-        title = win32gui.GetWindowText(hwnd)
-        if not title or len(title) < 2: return
+        # Get our own PID so we can exclude the app window from the list
+        our_pid = os.getpid()
+        # Also collect child PIDs (Edge app window launched by us)
+        our_pids = {our_pid}
         try:
-            _, pid = win32process.GetWindowThreadProcessId(hwnd)
-            # Skip our own app window entirely
-            if pid in our_pids: return
-            name = psutil.Process(pid).name().lower().replace(".exe","")
-        except Exception: name = "unknown"
-        is_browser = any(b in name for b in BROWSERS)
-        wins.append({"hwnd":hwnd,"title":title,"name":name,"is_browser":is_browser})
-    win32gui.EnumWindows(cb, None)
+            our_proc = psutil.Process(our_pid)
+            for child in our_proc.children(recursive=True):
+                our_pids.add(child.pid)
+        except Exception: pass
+        # Also exclude by _edge_pid if set
+        if _edge_pid: our_pids.add(_edge_pid)
 
-    # Sort: non-browsers first (alphabetical), then browsers (alphabetical)
-    # This puts Google Docs, Word, etc. at the top and YouTube tabs at the bottom
-    wins.sort(key=lambda x: (1 if x["is_browser"] else 0, x["title"].lower()))
+        # Build pid→name map once — avoids opening a new Process handle per window inside
+        # the EnumWindows callback, which hammers the kernel on every Refresh call.
+        pid_name = {}
+        try:
+            for proc in psutil.process_iter(["pid", "name"]):
+                try: pid_name[proc.info["pid"]] = proc.info["name"].lower().replace(".exe", "")
+                except Exception: pass
+        except Exception: pass
 
-    # Mark the best suggestion — first non-browser, or first browser if nothing else
-    if wins:
-        wins[0]["suggested"] = True
+        wins = []
+        def cb(hwnd, _):
+            if not win32gui.IsWindowVisible(hwnd): return
+            # Skip minimized windows — they cannot be screenshotted (PrintWindow returns black)
+            if win32gui.IsIconic(hwnd): return
+            title = win32gui.GetWindowText(hwnd)
+            if not title or len(title) < 2: return
+            try:
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                # Skip our own app window entirely
+                if pid in our_pids: return
+                name = pid_name.get(pid, "unknown")
+            except Exception: name = "unknown"
+            is_browser = any(b in name for b in BROWSERS)
+            wins.append({"hwnd":hwnd,"title":title,"name":name,"is_browser":is_browser})
+        win32gui.EnumWindows(cb, None)
 
-    _windows_cache = wins
-    return jsonify({"windows": wins})
+        # Sort: non-browsers first (alphabetical), then browsers (alphabetical)
+        # This puts Google Docs, Word, etc. at the top and YouTube tabs at the bottom
+        wins.sort(key=lambda x: (1 if x["is_browser"] else 0, x["title"].lower()))
+
+        # Mark the best suggestion — first non-browser, or first browser if nothing else
+        if wins:
+            wins[0]["suggested"] = True
+
+        _windows_cache = wins
+        return jsonify({"windows": wins})
+    except Exception as e:
+        # FIX: Always return a proper JSON response, even on error
+        return jsonify({"error": str(e), "windows": []})
 
 @app_flask.route("/api/screenshot", methods=["POST"])
 def api_screenshot():
@@ -1616,7 +1604,6 @@ def _launch_app_window(url):
         # Store PID so window finder can target it precisely
         global _edge_pid
         _edge_pid = proc.pid
-        threading.Thread(target=_strip_titlebar_later, daemon=True).start()
         return proc
     except Exception as e: print("Browser launch error: "+str(e)); return None
 
@@ -1632,59 +1619,7 @@ _edge_pid = None
 
 
 
-def _apply_frame_strip(hwnd):
-    """Strip WS_CAPTION and WS_SYSMENU. Keep WS_THICKFRAME (resize works)."""
-    try:
-        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
-        new_style = style & ~WS_CAPTION & ~WS_SYSMENU
-        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
-        ctypes.windll.user32.SetWindowPos(
-            hwnd, 0, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED
-        )
-    except Exception: pass
 
-def _strip_titlebar_later():
-    """
-    Wait for Edge window then strip titlebar + apply AOT.
-    Re-applies every 400ms for 15s (catches Edge redrawing frame after page load),
-    then every 2s forever.
-    """
-    global _AOT_HWND
-    if not HAS_WIN32:
-        return
-
-    # Wait up to 20s for window to appear
-    hwnd = None
-    deadline = time.time() + 20
-    while time.time() < deadline:
-        hwnd = _find_app_hwnd()
-        if hwnd:
-            break
-        time.sleep(0.25)
-
-    if not hwnd:
-        return
-
-    _AOT_HWND = hwnd
-
-    # Aggressively re-strip for 15s, then every 2s forever
-    aggressive_until = time.time() + 15
-    while True:
-        try:
-            hwnd = _find_app_hwnd() or _AOT_HWND
-            if hwnd:
-                _AOT_HWND = hwnd
-                # Set topmost FIRST before stripping caption — order matters
-                if bool(cfg.get("always_on_top", True)):
-                    _set_hwnd_topmost(hwnd, True)
-                _apply_frame_strip(hwnd)
-                # Set topmost AGAIN after frame change — frame strip can reset z-order
-                if bool(cfg.get("always_on_top", True)):
-                    _set_hwnd_topmost(hwnd, True)
-        except Exception: pass
-        interval = 0.4 if time.time() < aggressive_until else 2.0
-        time.sleep(interval)
 
 def _keep_alive(proc=None):
     """Keep the process alive until the browser window closes. No tkinter needed."""
@@ -1710,10 +1645,25 @@ def main():
     if not _wait_for_flask(): print("ERROR: Flask server failed to start."); sys.exit(1)
     url = "http://127.0.0.1:7890"
 
-    # ── PRIMARY: pywebview — framed window, Win32 titlebar stripped after launch ──
-    # frameless=True makes the ENTIRE WebView2 surface draggable at OS level —
-    # CSS no-drag cannot override it. So we use frameless=False and strip the
-    # Win32 titlebar ourselves, same as Edge app mode. CSS then works perfectly.
+    # ── PRIMARY: pywebview ──
+    # DIAGNOSTIC: print webview status so you can see why it might fall back
+    print("="*55)
+    print("PYWEBVIEW DIAGNOSTIC")
+    print(f"  HAS_WEBVIEW : {HAS_WEBVIEW}")
+    if HAS_WEBVIEW:
+        try: print(f"  version     : {webview.__version__}")
+        except Exception: print("  version     : unknown")
+        try:
+            import clr
+            print("  backend     : pythonnet/EdgeChromium")
+        except ImportError: pass
+        try:
+            from webview.platforms import winforms
+            print("  platform    : winforms")
+        except Exception as pe: print(f"  platform err: {pe}")
+    else:
+        print("  >> pywebview not installed — run: pip install pywebview")
+    print("="*55)
     if HAS_WEBVIEW:
         try:
             os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = " ".join([
@@ -1725,43 +1675,33 @@ def main():
                 "--force-device-scale-factor=1",
             ])
             global _webview_window
+
+            class WVApi:
+                def minimize(self):
+                    if _webview_window:
+                        _webview_window.minimize()
+                def close(self):
+                    threading.Thread(target=lambda: (time.sleep(0.1), os._exit(0)), daemon=True).start()
+
             _webview_window = webview.create_window(
                 title="Fiuxxed's AutoTyper v9.1",
                 url=url,
                 width=620, height=960,
                 min_size=(420, 600),
                 resizable=True,
-                frameless=False,
+                frameless=True,
+                transparent=False,                     # FIX: was True – now solid background
                 on_top=bool(cfg.get("always_on_top", True)),
-                background_color="#07070e",
+                background_color="#07070e",            # FIX: match your theme
+                js_api=WVApi(),
             )
-            start_aot_watcher()
 
-            class WVApi:
-                def drag(self):
-                    hwnd = _AOT_HWND or _find_app_hwnd()
-                    if hwnd and HAS_WIN32:
-                        ctypes.windll.user32.ReleaseCapture()
-                        ctypes.windll.user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
-                def minimize(self):
-                    hwnd = _AOT_HWND or _find_app_hwnd()
-                    if hwnd and HAS_WIN32:
-                        ctypes.windll.user32.ShowWindow(hwnd, 6)
-                def close(self):
-                    threading.Thread(target=lambda: (time.sleep(0.1), os._exit(0)), daemon=True).start()
-
-            def _on_loaded():
-                # Page loaded — strip titlebar now (pywebview redraws frame after load)
-                threading.Thread(target=_strip_titlebar_later, daemon=True).start()
-
-            _webview_window.events.loaded += _on_loaded
-            webview.start(debug=False, js_api=WVApi())
+            webview.start(debug=False)
             return
         except Exception as e:
-            print("pywebview error:", e)
+            _log_exc("pywebview failed — falling back to Edge subprocess", e)
 
     # ── FALLBACK: Edge app mode ──
-    start_aot_watcher()
     proc = _launch_app_window(url)
     if proc: _keep_alive(proc); return
 
