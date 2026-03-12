@@ -1,4 +1,4 @@
-chrome## A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
+A Windows desktop app that auto-types text into any field with human-like rhythm, typos, and pacing. Built with Python + Flask backend and a custom frameless UI running in Edge app-mode.
 
 
 <img width="595" height="564" alt="image" src="https://github.com/user-attachments/assets/87d82943-aea7-484b-bd17-8824e59a969f" />
@@ -59,11 +59,10 @@ chrome## A Windows desktop app that auto-types text into any field with human-li
 - a more specific image region selector making it easy to scan certain parts of a window
 - the ability to attach your own images that are on the local device (don't be freaky)
 
-
 ### What's next?
 - fixing the Always on Top not working
 - making the AI more trained
-- fixing the proccess selector for Scan and Math tabs
+- fixing the proccess selector going behind the window for Scan and Math tabs
 - fixing file explorer crash on launch
 
 
@@ -72,6 +71,10 @@ chrome## A Windows desktop app that auto-types text into any field with human-li
 ### Fixed
 - finally f***ing fixed Always on Top from not working
 - fixed file explorer from crashing on run
+
+### What's next?
+- making the AI more trained
+- fixing the proccess selector going behind the window for Scan and Math tabs
   
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
