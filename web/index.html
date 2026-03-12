@@ -21,14 +21,13 @@ html{height:100%;-webkit-text-size-adjust:100%}
 html,body,#app,#content,#tabs,#sbody,.panel,#panels,#sbar,.card,.scan-card,.scan-results,.qa-hist,.math-results,input,select,textarea,button{-webkit-app-region:no-drag!important;app-region:no-drag!important}
 body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;transform:translateZ(0)}
-/* Frameless: remove default browser body margin/border artifacts */
-html,body{border:none!important;outline:none!important;}
+/* FIX: Removed the rule that made html,body background:transparent – now solid bg from body */
 *{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-#app{display:flex;flex-direction:column;height:100vh}
+#app{display:flex;flex-direction:column;height:calc(100vh - 30px);margin:12px;border-radius:14px;overflow:hidden;box-shadow:0 0 40px 8px #7c3aed55,0 0 0 1px #3a2e66;background:var(--bg)}
 /* ── Custom Frameless Titlebar ── */
 #titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;-webkit-app-region:drag;app-region:drag;position:relative;z-index:10;user-select:none}#titlebar button,#titlebar .btn,#tb-close,#tb-min,#tb-settings{-webkit-app-region:no-drag;app-region:no-drag}
 #drag-region{display:flex;align-items:center;gap:10px;flex:1;padding:0 12px;height:100%;cursor:grab;-webkit-app-region:drag}
@@ -83,6 +82,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent2)}
 input::placeholder{color:var(--muted)}
 textarea{resize:vertical;min-height:88px;font-family:'Consolas',monospace;line-height:1.55;font-size:12px}
 select option{background:var(--card2)}
+/* ── Custom Dropdown (replaces native <select> to avoid WebView2 z-order bug) ── */
+.csel{position:relative;width:100%;user-select:none}
+.csel-trigger{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;font-size:12px;padding:9px 11px;cursor:pointer;transition:border-color var(--t);gap:8px;min-width:0}
+.csel-trigger:focus,.csel-trigger.open{border-color:var(--accent2);outline:none}
+.csel-val{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-arrow{flex-shrink:0;font-size:9px;color:var(--muted);transition:transform .15s}
+.csel-trigger.open .csel-arrow{transform:rotate(180deg)}
+.csel-menu{position:absolute;left:0;right:0;top:calc(100% + 3px);background:var(--card2);border:1px solid var(--accent);border-radius:var(--rs);z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 32px #00000088;display:none}
+.csel-menu.open{display:block}
+.csel-group-lbl{padding:6px 11px 3px;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.csel-opt{padding:8px 11px;font-size:12px;color:var(--text);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .1s,color .1s}
+.csel-opt:hover{background:var(--accentbg);color:var(--accent2)}
+.csel-opt.selected{color:var(--accent2);font-weight:600}
+.csel-opt.disabled{color:var(--muted);cursor:default;pointer-events:none}
 input[type=range]{padding:0;border:none;background:transparent;-webkit-appearance:none;height:22px;cursor:pointer}
 input[type=range]::-webkit-slider-track,input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--muted2)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);margin-top:-6px;box-shadow:0 0 8px #7c3aed66;transition:background .1s,transform .1s}
@@ -249,13 +262,22 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .music-ch{font-size:9.5px;color:var(--muted);margin-top:2px}
 .music-src-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:600;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:color var(--t),border-color var(--t)}
 /* Region selector */
-#region-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+#region-overlay{position:fixed;inset:0;z-index:9000;background:rgba(4,3,14,.93);backdrop-filter:blur(6px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:0}
 #region-overlay.open{display:flex}
-#region-wrap{position:relative;display:inline-block;cursor:none;border:2px solid var(--accent);border-radius:var(--rs);max-width:100%;max-height:70vh;overflow:visible}
-#region-img{display:block;max-width:100%;max-height:70vh;user-select:none;pointer-events:none;border-radius:var(--rs)}
-#region-box{position:absolute;border:2px solid var(--accent2);background:rgba(168,85,247,.18);display:none;pointer-events:none;z-index:2}
-#region-hint{color:var(--text2);font-size:11.5px;margin-bottom:10px;text-align:center}
-#region-actions{display:flex;gap:8px;margin-top:10px}
+#region-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 32px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);min-width:240px}
+#region-loading .rl-spin{width:38px;height:38px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+#region-loading .rl-txt{font-size:12.5px;font-weight:600;color:var(--text2)}
+#region-loading .rl-sub{font-size:10px;color:var(--muted);margin-top:-8px}
+#region-error{display:none;flex-direction:column;align-items:center;gap:12px;padding:32px;background:var(--card);border:1px solid var(--red);border-radius:var(--r);max-width:340px;text-align:center}
+#region-error .re-ico{font-size:28px}
+#region-error .re-msg{font-size:11.5px;color:var(--red);font-weight:600}
+#region-error .re-sub{font-size:10px;color:var(--muted);line-height:1.6}
+#region-main{display:none;flex-direction:column;align-items:center;width:100%;max-height:100vh;gap:8px}
+#region-wrap{position:relative;display:inline-block;cursor:crosshair;border:2px solid var(--accent);border-radius:var(--rs);max-width:100%;overflow:visible;box-shadow:0 0 40px rgba(124,58,237,.25)}
+#region-img{display:block;max-width:100%;max-height:65vh;user-select:none;pointer-events:none;border-radius:var(--rs)}
+#region-box{position:absolute;border:2px solid var(--accent2);background:rgba(168,85,247,.18);display:none;pointer-events:none;z-index:2;box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+#region-hint{color:var(--text2);font-size:11px;text-align:center;padding:4px 12px;background:var(--surface);border:1px solid var(--border);border-radius:20px;white-space:nowrap}
+#region-actions{display:flex;gap:8px}
 /* Magnifier lens */
 #mag-lens{position:fixed;width:180px;height:180px;border-radius:50%;border:3px solid var(--accent2);box-shadow:0 0 0 1px rgba(0,0,0,.5),0 8px 32px rgba(0,0,0,.7);overflow:hidden;pointer-events:none;display:none;z-index:9100;transform:translate(-50%,-50%)}
 #mag-canvas{position:absolute;top:0;left:0}
@@ -273,7 +295,8 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 <div id="app">
 
 <div id="titlebar">
-  <div id="drag-region" onmousedown="dragWindow()">
+  <!-- FIX: Added onmousedown="dragWindow()" to make titlebar draggable -->
+  <div id="drag-region">
     <div class="tb-logo">⌨</div>
     <div class="tb-brand">
       <span class="tb-title">Fiuxxed's AutoTyper</span>
@@ -359,7 +382,13 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <span class="lbl" style="margin:0">SELECT WINDOW</span>
         <button class="btn btn-s" style="padding:5px 11px;font-size:10.5px" onclick="loadWins('scan')">⟳ Refresh</button>
       </div>
-      <select id="win-scan" onchange="pickWin('scan')"><option value="">— click Refresh —</option></select>
+      <div class="csel" id="win-scan-csel">
+        <button class="csel-trigger" id="win-scan-csel-trigger" onclick="cselToggle('win-scan-csel')">
+          <span class="csel-val" id="win-scan-csel-val">— click Refresh —</span>
+          <span class="csel-arrow">▼</span>
+        </button>
+        <div class="csel-menu" id="win-scan-csel-menu"></div>
+      </div>
       <div id="wtype-scan" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
       <div id="scan-ctx-boxes" style="margin-top:10px"></div>
       <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:6px" onclick="addContextBox('scan')">＋ Add Extra Context</button>
@@ -402,7 +431,13 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <span class="lbl" style="margin:0">SELECT WINDOW</span>
         <button class="btn btn-s" style="padding:5px 11px;font-size:10.5px" onclick="loadWins('math')">⟳ Refresh</button>
       </div>
-      <select id="win-math" onchange="pickWin('math')"><option value="">— click Refresh —</option></select>
+      <div class="csel" id="win-math-csel">
+        <button class="csel-trigger" id="win-math-csel-trigger" onclick="cselToggle('win-math-csel')">
+          <span class="csel-val" id="win-math-csel-val">— click Refresh —</span>
+          <span class="csel-arrow">▼</span>
+        </button>
+        <div class="csel-menu" id="win-math-csel-menu"></div>
+      </div>
       <div id="wtype-math" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
       <button id="math-btn" class="btn btn-p btn-full mt10" onclick="doShot('math')" disabled>📸 Screenshot & Solve</button>
     </div>
@@ -455,7 +490,13 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     <div class="card mt10">
       <div class="lbl">MICROPHONE INPUT</div>
       <div class="rsb" style="margin-bottom:6px">
-        <select id="mic-select" style="flex:1;margin-right:8px"><option value="">-- click Refresh --</option></select>
+        <div class="csel" id="mic-csel" style="flex:1;margin-right:8px">
+          <button class="csel-trigger" id="mic-csel-trigger" onclick="cselToggle('mic-csel')">
+            <span class="csel-val" id="mic-csel-val">-- click Refresh --</span>
+            <span class="csel-arrow">▼</span>
+          </button>
+          <div class="csel-menu" id="mic-csel-menu"></div>
+        </div>
         <button class="btn btn-s" style="padding:6px 12px;font-size:11px;flex-shrink:0" onclick="loadMics()">⟳ Refresh</button>
       </div>
       <div id="mic-info" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
@@ -809,71 +850,59 @@ function setStat(msg, kind) {
 //  WINDOWS
 // ══════════════════════════════════════════════════════
 async function loadWins(tab) {
-  const selId = tab==="scan"?"win-scan":"win-math";
-  const sel = q("#"+selId);
+  const menuId = tab==="scan"?"win-scan-csel-menu":"win-math-csel-menu";
+  const valId  = tab==="scan"?"win-scan-val":"win-math-val";
+  const cselId = tab==="scan"?"win-scan-csel":"win-math-csel";
   // Remember previously selected hwnd so we can re-select after refresh
   const prevHwnd = tab==="scan" ? (hwndScan ? String(hwndScan) : null) : (hwndMath ? String(hwndMath) : null);
-  sel.innerHTML="<option>Loading windows…</option>";
-  const d = await get("/api/windows").catch(()=>({windows:[]}));
+  cselSetText(valId, "Loading windows…");
+  // FIX: use the timeout-enhanced get() function (defined below)
+  const d = await get("/api/windows").catch(e=>({windows:[], error:e.message}));
   const wins=d.windows||[];
-  if(tab==="scan") winsScan=wins; else winsMath=wins;
-  sel.innerHTML="";
-  if(!wins.length){ sel.innerHTML="<option value=''>No windows found — try Refresh</option>"; return; }
+  if(tab==="scan"){ winsScan=wins; hwndScan=null; } else { winsMath=wins; hwndMath=null; }
+  const btnId = tab==="scan"?"scan-btn":"math-btn";
+  const rbtnId = tab==="scan"?"region-scan-btn":null;
+  q("#"+btnId).disabled=true;
+  if(rbtnId) q("#"+rbtnId).disabled=true;
 
-  // Build grouped options: apps first, then a divider, then browsers
+  if(!wins.length){
+    const msg = d.error ? "⚠ Error: "+d.error : "No windows found — try Refresh";
+    cselSetText(valId, msg);
+    cselBuild(cselId, [], null, ()=>{});
+    return;
+  }
+
+  // Build groups
   const apps     = wins.filter(w=>!w.is_browser);
   const browsers = wins.filter(w=> w.is_browser);
+  const groups = [];
+  if(apps.length)     groups.push({label:"📄 Apps & Documents", items: apps.map(w=>({value:String(w.hwnd), label:w.title.length>60?w.title.substring(0,60)+"…":w.title}))});
+  if(browsers.length) groups.push({label:"🌐 Browser Tabs",     items: browsers.map(w=>({value:String(w.hwnd), label:w.title.length>60?w.title.substring(0,60)+"…":w.title}))});
 
-  if(apps.length){
-    const grp = document.createElement("optgroup");
-    grp.label = "📄 Apps & Documents";
-    apps.forEach(w=>{
-      const o=document.createElement("option");
-      o.value=String(w.hwnd);
-      o.textContent=w.title.length>60 ? w.title.substring(0,60)+"…" : w.title;
-      grp.appendChild(o);
-    });
-    sel.appendChild(grp);
-  }
-  if(browsers.length){
-    const grp = document.createElement("optgroup");
-    grp.label = "🌐 Browser Tabs";
-    browsers.forEach(w=>{
-      const o=document.createElement("option");
-      o.value=String(w.hwnd);
-      o.textContent=w.title.length>60 ? w.title.substring(0,60)+"…" : w.title;
-      grp.appendChild(o);
-    });
-    sel.appendChild(grp);
-  }
+  // Determine initial selection
+  const allItems = [...apps, ...browsers];
+  let initVal = allItems.length ? String(allItems[0].hwnd) : null;
+  if(prevHwnd && allItems.some(w=>String(w.hwnd)===prevHwnd)) initVal = prevHwnd;
 
-  // Try to restore previous selection, else default to first (which is already best suggestion)
-  const allOpts = Array.from(sel.options);
-  if(prevHwnd && allOpts.some(o=>o.value===prevHwnd)){
-    sel.value = prevHwnd;
-  } else {
-    // Pick first option (backend already sorted non-browsers first)
-    if(sel.options.length) sel.options[0].selected = true;
-  }
-  sel.dispatchEvent(new Event("change"));
+  cselBuild(cselId, groups, initVal, (val)=>{
+    // val is hwnd string
+    const hwndVal = parseInt(val);
+    const allWins = tab==="scan"?winsScan:winsMath;
+    const w = allWins.find(x=>x.hwnd===hwndVal);
+    const typeId=tab==="scan"?"wtype-scan":"wtype-math";
+    if(!w){ q("#"+btnId).disabled=true; return; }
+    if(tab==="scan") hwndScan=w.hwnd; else hwndMath=w.hwnd;
+    const td=q("#"+typeId);
+    td.style.color=w.is_browser?"var(--green)":"var(--accent2)";
+    td.textContent=w.is_browser?"🌐 Browser — active tab":"🖥 App window";
+    q("#"+btnId).disabled=false;
+    if(tab==="scan") q("#region-scan-btn").disabled=false;
+  });
+
+  if(initVal) cselSelect(cselId, initVal);
 }
 
-function pickWin(tab) {
-  const selId=tab==="scan"?"win-scan":"win-math";
-  const typeId=tab==="scan"?"wtype-scan":"wtype-math";
-  const btnId=tab==="scan"?"scan-btn":"math-btn";
-  const wins=tab==="scan"?winsScan:winsMath;
-  const hwndVal = parseInt(q("#"+selId).value);
-  // Find by hwnd value (stable) instead of array index (breaks on refresh)
-  const w = wins.find(x => x.hwnd === hwndVal);
-  if(!w){q("#"+btnId).disabled=true;return;}
-  if(tab==="scan") hwndScan=w.hwnd; else hwndMath=w.hwnd;
-  const td=q("#"+typeId);
-  td.style.color=w.is_browser?"var(--green)":"var(--accent2)";
-  td.textContent=w.is_browser?"🌐 Browser — active tab":"🖥 App window";
-  q("#"+btnId).disabled=false;
-  if(tab==="scan") q("#region-scan-btn").disabled=false;
-}
+function pickWin(tab) { /* handled by csel callback in loadWins */ }
 
 // ══════════════════════════════════════════════════════
 //  SCANNER
@@ -1327,24 +1356,22 @@ async function checkVoice() {
 }
 
 async function loadMics() {
-  const sel=q("#mic-select"); const info=q("#mic-info");
-  sel.innerHTML="<option>Loading...</option>";
+  const info=q("#mic-info");
+  cselSetText("mic-val", "Loading...");
   const r=await get("/api/voice/devices").catch(e=>({error:e.toString(),devices:[]}));
-  if(r.error){ sel.innerHTML=`<option value="">Error: ${esc(r.error)}</option>`; return; }
-  sel.innerHTML="";
-  const defaultOpt=document.createElement("option");
-  defaultOpt.value=""; defaultOpt.textContent="🎤 System Default"; sel.appendChild(defaultOpt);
-  (r.devices||[]).forEach(d=>{
-    const o=document.createElement("option");
-    o.value=d.index; o.textContent=(d.is_default?"★ ":"")+d.name; sel.appendChild(o);
-  });
-  sel.onchange=function(){
-    selectedMicIndex=this.value===""?null:parseInt(this.value);
-    const d=(r.devices||[]).find(x=>x.index===selectedMicIndex);
+  if(r.error){ cselSetText("mic-val", "Error: "+esc(r.error)); return; }
+  const devices = r.devices||[];
+  const items = [
+    {value:"", label:"🎤 System Default"},
+    ...devices.map(d=>({value:String(d.index), label:(d.is_default?"★ ":"")+d.name}))
+  ];
+  cselBuild("mic-csel", [{items}], "", (val)=>{
+    selectedMicIndex = val===""?null:parseInt(val);
+    const d=devices.find(x=>x.index===selectedMicIndex);
     info.textContent=d?"Selected: "+d.name:"Using system default mic";
-  };
-  sel.dispatchEvent(new Event("change"));
-  info.textContent=""+(r.devices||[]).length+" mic(s) found";
+  });
+  cselSelect("mic-csel", "");
+  info.textContent=""+devices.length+" mic(s) found";
 }
 
 async function toggleVoice() {
@@ -1586,16 +1613,25 @@ function buildSettings(tab) {
   function hksel(lbl,key){
     const val=S[key]||"None";
     const d=document.createElement("div"); d.className="s-row";
-    const opts=["F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","None"].map(k=>`<option${k===val?" selected":""}>${k}</option>`).join("");
-    d.innerHTML=`<div class="rsb"><div class="s-lbl">${lbl}</div><select style="width:100px;font-family:Consolas,monospace;font-size:11px" onchange="S['${key}']=this.value;updateHkPills()">${opts}</select></div>`;
+    const uid="csel-hk-"+key;
+    d.innerHTML=`<div class="rsb"><div class="s-lbl">${lbl}</div><div class="csel" id="${uid}" style="width:110px"><button class="csel-trigger" onclick="cselToggle('${uid}')"><span class="csel-val" id="${uid}-val">${esc(val)}</span><span class="csel-arrow">▼</span></button><div class="csel-menu" id="${uid}-menu"></div></div></div>`;
     frag.appendChild(d);
+    // Build after element is in DOM (deferred)
+    requestAnimationFrame(()=>{
+      const keys=["F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12","None"];
+      cselBuild(uid,[{items:keys.map(k=>({value:k,label:k}))}],val,(v)=>{S[key]=v;updateHkPills();});
+    });
   }
   function selRow(lbl,key,opts,note){
     const val=S[key]||opts[0].v;
     const d=document.createElement("div"); d.className="s-row";
-    const optHtml=opts.map(o=>`<option value="${o.v}"${o.v===val?" selected":""}>${o.l}</option>`).join("");
-    d.innerHTML=`<div class="rsb"><div><div class="s-lbl">${lbl}</div>${note?`<div class="s-note">${note}</div>`:""}</div></div><div class="s-ctrl"><select onchange="S['${key}']=this.value">${optHtml}</select></div>`;
+    const uid="csel-sr-"+key;
+    const initLabel=esc((opts.find(o=>o.v===val)||opts[0]).l||'');
+    d.innerHTML=`<div class="rsb"><div><div class="s-lbl">${lbl}</div>${note?`<div class="s-note">${note}</div>`:""}</div></div><div class="s-ctrl"><div class="csel" id="${uid}"><button class="csel-trigger" onclick="cselToggle('${uid}')"><span class="csel-val" id="${uid}-val">${initLabel}</span><span class="csel-arrow">▼</span></button><div class="csel-menu" id="${uid}-menu"></div></div></div>`;
     frag.appendChild(d);
+    requestAnimationFrame(()=>{
+      cselBuild(uid,[{items:opts.map(o=>({value:o.v,label:o.l}))}],val,(v)=>{S[key]=v;});
+    });
   }
   function apiKeyRow(){
     const val=S.groq_api_key||"";
@@ -1718,9 +1754,8 @@ function switchTab(id) {
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===id));
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+id));
   if(id==="history") loadHistory();
-  // Only auto-load windows if the list is empty — preserves user's selection on tab revisit
-  if(id==="scanner" && !winsScan.length) loadWins("scan");
-  if(id==="math"    && !winsMath.length) loadWins("math");
+  // Window list is NEVER loaded automatically — user must click Refresh.
+  // Auto-loading scans all running processes on every tab switch which is slow and intrusive.
 }
 
 // ══════════════════════════════════════════════════════
@@ -1730,9 +1765,25 @@ const q=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const enc=s=>encodeURIComponent(s);
 const dec=s=>decodeURIComponent(s);
-async function get(url){ const r=await fetch(url); return r.json(); }
-async function post(url,data){
-  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:data?JSON.stringify(data):undefined});
+
+// FIX: Enhanced get() with timeout and abort controller
+async function get(url, timeout = 5000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const r = await fetch(url, { signal: controller.signal });
+        clearTimeout(id);
+        if (!r.ok) throw new Error(`Server ${r.status} on ${url}`);
+        return await r.json();
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+}
+
+async function post(url, data) {
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:data?JSON.stringify(data):undefined});
+  if (!r.ok) throw new Error("Server " + r.status + " on " + url);
   return r.json();
 }
 
@@ -1964,24 +2015,46 @@ let _regionDrag = false;
 let _regionStart = null;
 
 let _previewB64 = null;  // full-res b64 for magnifier sampling
+
+function _regionSetState(state, errMsg) {
+  q("#region-loading").style.display = state === "loading" ? "flex" : "none";
+  q("#region-error").style.display   = state === "error"   ? "flex" : "none";
+  q("#region-main").style.display    = state === "main"    ? "flex" : "none";
+  if (state === "error" && errMsg) q("#region-error-msg").textContent = errMsg;
+}
+
 async function openRegionSelector(tab) {
   _regionMode = tab;
   _regionHwnd = tab === "scan" ? hwndScan : hwndMath;
-  _regionSel = null;
-  _previewB64 = null;
+  _regionSel = null; _previewB64 = null;
   q("#region-confirm-btn").disabled = true;
   q("#region-box").style.display = "none";
   q("#mag-lens").style.display = "none";
-  const overlay = q("#region-overlay");
-  overlay.classList.add("open");
-  const img = q("#region-img");
-  img.src = "";
-  q("#region-hint").textContent = "📸 Taking screenshot…";
-  const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }).catch(e => ({ error: e.toString() }));
-  if (r.error) { q("#region-hint").textContent = "⚠ " + r.error; return; }
+  q("#region-overlay").classList.add("open");
+  _regionSetState("loading");
+  await _doRegionFetch();
+}
+
+async function retryRegion() {
+  _regionSel = null; _previewB64 = null;
+  q("#region-confirm-btn").disabled = true;
+  q("#region-box").style.display = "none";
+  _regionSetState("loading");
+  await _doRegionFetch();
+}
+
+async function _doRegionFetch() {
+  const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }).catch(e => ({ error: e.message }));
+  if (!q("#region-overlay").classList.contains("open")) return;
+  if (r.error || !r.b64) {
+    _regionSetState("error", "⚠ " + (r.error || "Screenshot returned empty — try refreshing the window list."));
+    return;
+  }
   _previewB64 = r.b64;
+  const img = q("#region-img");
+  img.onload = () => _regionSetState("main");
+  img.onerror = () => _regionSetState("error", "⚠ Failed to display screenshot.");
   img.src = "data:image/png;base64," + r.b64;
-  q("#region-hint").textContent = "🖱 Drag to select region — hover to magnify. Or scan full screen.";
 }
 
 function closeRegion() {
@@ -2099,8 +2172,117 @@ document.addEventListener("keydown", e => {
 // region button now handled inside pickWin directly
 
 // ══════════════════════════════════════════════════════
-//  WINDOW CONTROL  (frameless titlebar)
+//  CUSTOM DROPDOWN ENGINE  (csel — avoids OS-level popup z-order bug)
 // ══════════════════════════════════════════════════════
+// csel state: maps cselId → { value, onChange, groups }
+const _cselState = {};
+
+function cselBuild(cselId, groups, initVal, onChange) {
+  // groups = [{label?, items:[{value,label}]}]
+  _cselState[cselId] = { value: initVal, onChange, groups };
+  _cselRenderMenu(cselId);
+}
+
+function _cselRenderMenu(cselId) {
+  const menu = q("#"+cselId+"-menu");
+  if (!menu) return;
+  const state = _cselState[cselId];
+  if (!state) return;
+  menu.innerHTML = "";
+  state.groups.forEach(g => {
+    if (g.label) {
+      const lbl = document.createElement("div");
+      lbl.className = "csel-group-lbl";
+      lbl.textContent = g.label;
+      menu.appendChild(lbl);
+    }
+    (g.items||[]).forEach(item => {
+      const opt = document.createElement("div");
+      opt.className = "csel-opt" + (item.value === state.value ? " selected" : "");
+      opt.textContent = item.label;
+      opt.dataset.value = item.value;
+      opt.onclick = (e) => {
+        e.stopPropagation();
+        cselSelect(cselId, item.value);
+        cselClose(cselId);
+      };
+      menu.appendChild(opt);
+    });
+  });
+}
+
+function cselSelect(cselId, value) {
+  const state = _cselState[cselId];
+  if (!state) return;
+  state.value = value;
+  // Update display text
+  let label = value;
+  for (const g of state.groups) {
+    const item = (g.items||[]).find(i => i.value === value);
+    if (item) { label = item.label; break; }
+  }
+  cselSetText(cselId+"-val", label);
+  // Update selected styling in menu
+  const menu = q("#"+cselId+"-menu");
+  if (menu) menu.querySelectorAll(".csel-opt").forEach(o => {
+    o.classList.toggle("selected", o.dataset.value === value);
+  });
+  if (state.onChange) state.onChange(value);
+}
+
+function cselSetText(valId, text) {
+  const el = q("#"+valId);
+  if (el) el.textContent = text;
+}
+
+function cselToggle(cselId) {
+  const menu = q("#"+cselId+"-menu");
+  const trigger = q("#"+cselId+"-trigger");
+  if (!menu) return;
+  const isOpen = menu.classList.contains("open");
+  // Close all other open dropdowns first
+  document.querySelectorAll(".csel-menu.open").forEach(m => {
+    if (m.id !== cselId+"-menu") {
+      m.classList.remove("open");
+      const t = document.querySelector("[id='"+m.id.replace("-menu","-trigger")+"']");
+      if (t) t.classList.remove("open");
+    }
+  });
+  menu.classList.toggle("open", !isOpen);
+  if (trigger) trigger.classList.toggle("open", !isOpen);
+}
+
+function cselClose(cselId) {
+  const menu = q("#"+cselId+"-menu");
+  const trigger = q("#"+cselId+"-trigger");
+  if (menu) menu.classList.remove("open");
+  if (trigger) trigger.classList.remove("open");
+}
+
+// Close all dropdowns when clicking outside
+document.addEventListener("click", e => {
+  if (!e.target.closest(".csel")) {
+    document.querySelectorAll(".csel-menu.open").forEach(m => {
+      m.classList.remove("open");
+      const tid = m.id.replace("-menu", "-trigger");
+      const t = document.getElementById(tid);
+      if (t) t.classList.remove("open");
+    });
+  }
+});
+
+// Close on Escape
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    document.querySelectorAll(".csel-menu.open").forEach(m => {
+      m.classList.remove("open");
+      const t = document.getElementById(m.id.replace("-menu", "-trigger"));
+      if (t) t.classList.remove("open");
+    });
+  }
+});
+
+
 function dragWindow() {
   // Signal AOT watcher to pause during drag (prevents z-order fighting)
   dragStart();
@@ -2152,16 +2334,33 @@ document.addEventListener("mouseup", () => dragEnd());
 </script>
 <!-- ─── REGION SELECTOR OVERLAY ─── -->
 <div id="region-overlay">
-  <div id="region-hint">🖱 Click and drag to select a region to scan. Press <b>Esc</b> to cancel.</div>
-  <div id="region-wrap">
-    <img id="region-img" src="" alt="screenshot">
-    <div id="region-box"></div>
+  <div id="region-loading">
+    <div class="rl-spin"></div>
+    <div class="rl-txt">📸 Taking screenshot…</div>
+    <div class="rl-sub">Capturing window, hang tight</div>
+    <button class="btn btn-ghost" style="margin-top:4px;padding:6px 18px;font-size:11px" onclick="closeRegion()">✕ Cancel</button>
   </div>
-<div id="mag-lens"><canvas id="mag-canvas" width="180" height="180"></canvas></div>
-  <div id="region-actions">
-    <button class="btn btn-p" id="region-confirm-btn" onclick="confirmRegion()" disabled>✓ Scan This Region</button>
-    <button class="btn btn-ghost" onclick="closeRegion()">✕ Cancel</button>
-    <button class="btn btn-s" id="region-fullbtn" onclick="scanFullScreen()">📸 Scan Full Screen</button>
+  <div id="region-error">
+    <div class="re-ico">⚠️</div>
+    <div class="re-msg" id="region-error-msg">Screenshot failed</div>
+    <div class="re-sub">Make sure a window is selected and it is not minimized.</div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-p" style="font-size:11px;padding:7px 18px" onclick="retryRegion()">↺ Retry</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:7px 18px" onclick="closeRegion()">✕ Close</button>
+    </div>
+  </div>
+  <div id="region-main">
+    <div id="region-hint">🖱 Drag to select a region &middot; hover to magnify &middot; <b>Esc</b> to cancel</div>
+    <div id="region-wrap">
+      <img id="region-img" src="" alt="">
+      <div id="region-box"></div>
+    </div>
+    <div id="mag-lens"><canvas id="mag-canvas" width="180" height="180"></canvas></div>
+    <div id="region-actions">
+      <button class="btn btn-p" id="region-confirm-btn" onclick="confirmRegion()" disabled>✓ Scan This Region</button>
+      <button class="btn btn-ghost" onclick="closeRegion()">✕ Cancel</button>
+      <button class="btn btn-s" id="region-fullbtn" onclick="scanFullScreen()">📸 Scan Full Screen</button>
+    </div>
   </div>
 </div>
 </body>
