@@ -851,7 +851,7 @@ function setStat(msg, kind) {
 // ══════════════════════════════════════════════════════
 async function loadWins(tab) {
   const menuId = tab==="scan"?"win-scan-csel-menu":"win-math-csel-menu";
-  const valId  = tab==="scan"?"win-scan-val":"win-math-val";
+  const valId  = tab==="scan"?"win-scan-csel-val":"win-math-csel-val";
   const cselId = tab==="scan"?"win-scan-csel":"win-math-csel";
   // Remember previously selected hwnd so we can re-select after refresh
   const prevHwnd = tab==="scan" ? (hwndScan ? String(hwndScan) : null) : (hwndMath ? String(hwndMath) : null);
@@ -1357,9 +1357,9 @@ async function checkVoice() {
 
 async function loadMics() {
   const info=q("#mic-info");
-  cselSetText("mic-val", "Loading...");
+  cselSetText("mic-csel-val", "Loading...");
   const r=await get("/api/voice/devices").catch(e=>({error:e.toString(),devices:[]}));
-  if(r.error){ cselSetText("mic-val", "Error: "+esc(r.error)); return; }
+  if(r.error){ cselSetText("mic-csel-val", "Error: "+esc(r.error)); return; }
   const devices = r.devices||[];
   const items = [
     {value:"", label:"🎤 System Default"},
