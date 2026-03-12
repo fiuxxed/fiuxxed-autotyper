@@ -576,6 +576,103 @@ def img_to_b64(img):
 # ══════════════════════════════════════════════════════════════════════
 #  GRAPH GENERATOR
 # ══════════════════════════════════════════════════════════════════════
+def make_diagram(diagram_data):
+    """Draw a geometry diagram from structured AI-extracted data."""
+    if not HAS_PLOT: return None
+    try:
+        points  = diagram_data.get("points", {})   # {"A":[x,y], "B":[x,y], ...}
+        edges   = diagram_data.get("edges", [])    # [["A","B"], ["B","C"], ...]
+        angles  = diagram_data.get("angles", {})   # {"B": "90°", ...}
+        labels  = diagram_data.get("labels", {})   # {"AB": "6y-16", "BA": "4y+6", ...}
+        title   = diagram_data.get("title", "Diagram")
+
+        if not points: return None
+
+        fig, ax = plt.subplots(figsize=(5.5, 4.5), facecolor="#07070e")
+        ax.set_facecolor("#0d0c18")
+        ax.set_aspect("equal")
+
+        # Draw edges
+        for edge in edges:
+            if len(edge) == 2 and edge[0] in points and edge[1] in points:
+                x0,y0 = points[edge[0]]
+                x1,y1 = points[edge[1]]
+                ax.plot([x0,x1],[y0,y1], color="#a855f7", linewidth=2.2, zorder=3)
+                # Draw edge label at midpoint
+                key = edge[0]+edge[1]
+                lbl = labels.get(key) or labels.get(edge[1]+edge[0])
+                if lbl:
+                    mx,my = (x0+x1)/2, (y0+y1)/2
+                    # offset label slightly perpendicular
+                    dx,dy = x1-x0, y1-y0
+                    length = max((dx**2+dy**2)**0.5, 0.001)
+                    ox,oy = -dy/length*0.3, dx/length*0.3
+                    ax.text(mx+ox, my+oy, lbl, color="#f59e0b", fontsize=8.5,
+                            ha="center", va="center",
+                            bbox=dict(boxstyle="round,pad=0.2", fc="#07070e", ec="none", alpha=0.8))
+
+        # Draw right-angle markers
+        for pt_name, ang_label in angles.items():
+            if pt_name not in points: continue
+            if "90" in str(ang_label) or "right" in str(ang_label).lower():
+                # find two edges meeting at this point
+                connected = [e for e in edges if pt_name in e]
+                if len(connected) >= 2:
+                    px,py = points[pt_name]
+                    def unit_toward(from_pt, to_name):
+                        tx,ty = points[to_name]
+                        dx,dy = tx-from_pt[0], ty-from_pt[1]
+                        l = max((dx**2+dy**2)**0.5, 0.001)
+                        return dx/l, dy/l
+                    other1 = connected[0][1] if connected[0][0]==pt_name else connected[0][0]
+                    other2 = connected[1][1] if connected[1][0]==pt_name else connected[1][0]
+                    if other1 in points and other2 in points:
+                        s = 0.25
+                        u1 = unit_toward((px,py), other1)
+                        u2 = unit_toward((px,py), other2)
+                        sq = plt.Polygon([
+                            [px+s*u1[0],          py+s*u1[1]],
+                            [px+s*u1[0]+s*u2[0],  py+s*u1[1]+s*u2[1]],
+                            [px+s*u2[0],          py+s*u2[1]],
+                            [px,                  py],
+                        ], fill=False, edgecolor="#10b981", linewidth=1.2)
+                        ax.add_patch(sq)
+            else:
+                # label the angle as text near the vertex
+                px,py = points[pt_name]
+                ax.text(px, py-0.35, str(ang_label), color="#f59e0b", fontsize=8,
+                        ha="center", va="top")
+
+        # Draw points and labels
+        xs = [v[0] for v in points.values()]
+        ys = [v[1] for v in points.values()]
+        ax.scatter(xs, ys, color="#a855f7", s=40, zorder=5)
+        for name,(px,py) in points.items():
+            # offset label away from centroid
+            cx,cy = sum(xs)/len(xs), sum(ys)/len(ys)
+            ox = 0.3 * (1 if px >= cx else -1)
+            oy = 0.3 * (1 if py >= cy else -1)
+            ax.text(px+ox, py+oy, name, color="#e9d5ff", fontsize=11,
+                    fontweight="bold", ha="center", va="center")
+
+        # Padding
+        pad = 1.0
+        ax.set_xlim(min(xs)-pad, max(xs)+pad)
+        ax.set_ylim(min(ys)-pad, max(ys)+pad)
+
+        ax.set_title(title, color="#e9d5ff", fontsize=10, pad=8)
+        ax.tick_params(colors="#6b5b9e", labelsize=7)
+        ax.grid(True, color="#28204a", alpha=0.4, linewidth=0.6)
+        for sp in ax.spines.values(): sp.set_color("#28204a")
+
+        plt.tight_layout()
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", dpi=110, bbox_inches="tight", facecolor="#07070e")
+        plt.close(fig)
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
+    except Exception:
+        return None
+
 def make_graph(eq_str):
     if not HAS_PLOT: return None
     eq = eq_str.strip()
@@ -734,8 +831,15 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 "- steps: array of step-by-step solution strings\n"
                 "- explanations: array of plain English explanation per step (SAME length as steps)\n"
                 "- vertical_method: ALWAYS provide this. Show ONLY equations/calculations as numbered steps, no words. e.g. '1) HL = 1/2(HJ)\\n2) HJ = 2*HL\\n3) HJ = 126'. Never null.\n"
-                "- graph_eq: for ANY plottable function provide 'y=expr'. For geometry problems that can be visualized provide null\n"
-                "- diagram_description: for geometry/diagram problems, describe what to draw (e.g. 'Triangle with angles 97, 28, 55 degrees'). null for pure algebra\n"
+                "- graph_eq: for ANY plottable function provide 'y=expr'. For geometry problems provide null\n"
+                "- diagram_data: for geometry/diagram problems, provide a JSON object with:\n"
+                "    points: {\"A\":[x,y], \"B\":[x,y], ...} — place points on a coordinate grid that accurately reflects the shape. Use real proportions from the image.\n"
+                "    edges: [[\"A\",\"B\"],[\"B\",\"C\"],...] — line segments to draw\n"
+                "    angles: {\"B\":\"90°\",...} — angle label at each vertex (include 'right' or '90' for right angles so a square marker is drawn)\n"
+                "    labels: {\"AB\":\"6y-16\",\"BC\":\"4y+6\",...} — side length expressions from the problem\n"
+                "    title: short description e.g. 'Triangle ABC'\n"
+                "  null for pure algebra/non-geometry problems\n"
+                "- diagram_description: plain text description of the diagram for geometry problems. null for pure algebra\n"
                 "- has_graph: true if graph_eq is not null\n"
                 "- confident: false only if you cannot clearly read the problem\n\n"
                 "RULES:\n"
@@ -750,7 +854,7 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 '"steps":["Subtract 3: 2x=4","Divide by 2: x=2"],'
                 '"explanations":["Remove constant from left","Isolate x"],'
                 '"vertical_method":null,"answer":"x = 2",'
-                '"graph_eq":null,"diagram_description":null,"has_graph":false,"confident":true}]\n'
+                '"graph_eq":null,"diagram_data":null,"diagram_description":null,"has_graph":false,"confident":true}]\n'
                 "No math found: []"
             )}
         ]}],
@@ -1137,7 +1241,13 @@ def api_screenshot():
             problems = ai_math(b64, examine_examples=cfg.get("examine_examples", False), extra_context=extra_context, extra_images=extra_images)
             for p in problems:
                 eq = p.get("graph_eq")
-                p["graph_b64"] = make_graph(eq) if (eq and cfg.get("math_show_graphs", True)) else None
+                diag = p.get("diagram_data")
+                if eq and cfg.get("math_show_graphs", True):
+                    p["graph_b64"] = make_graph(eq)
+                elif diag and cfg.get("math_show_graphs", True):
+                    p["graph_b64"] = make_diagram(diag)
+                else:
+                    p["graph_b64"] = None
                 if "diagram_description" not in p:
                     p["diagram_description"] = None
                 if cfg.get("math_formula_library", True) and p.get("answer"):
