@@ -75,6 +75,18 @@ A Windows desktop app that auto-types text into any field with human-like rhythm
 ### What's next?
 - making the AI more trained
 - fixing the proccess selector going behind the window for Scan and Math tabs
+- removing the ugly microsoft edge title bar
+
+## March 12, 2026
+
+### Fixed
+- fixed the proccess selector going behind the window for Scan and Math tabs
+
+### Changed
+- removed the default ms edge title bar
+
+### What's next?
+- making the AI more trained
   
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
