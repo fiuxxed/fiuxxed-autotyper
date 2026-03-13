@@ -37,7 +37,8 @@ A Windows desktop app that auto-types text into any field with human-like rhythm
 # Updating Process: 
 1. **Wait until you see any recently changed major files in the github**
 2. **If you do, delete the old zip and **ALSO** it's unzipped counterpart.** (or keep the old one idgaf)
-3.**And then just follow step 3-5 from the Installation Process.** No you do not have to run the install.bat again UNLESS you deleted python or something.
+3. **And then just follow step 3-5 from the Installation Process. No you do not have to run the install.bat again UNLESS you deleted python or something.**
+4. **Alternatively, You can **also** just replace the files in your zip with the ones that get updated instead of installing the whole new zip.**
 
 # Changelog:
 
