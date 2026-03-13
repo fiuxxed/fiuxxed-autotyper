@@ -399,7 +399,15 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <button class="btn btn-s" style="font-size:10.5px;flex:1" onclick="openRegionSelector('scan')" id="region-scan-btn" disabled>✂ Select Region</button>
       </div>
       <div id="img-attach-scan"></div>
-      <button id="scan-btn" class="btn btn-p btn-full mt10" onclick="doShot('scan')" disabled>📸 Screenshot & Scan</button>
+      <div style="margin-top:8px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="yt-scan-inp" placeholder="Paste YouTube link for transcript context (optional)…" style="flex:1;font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;outline:none">
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 10px;white-space:nowrap;flex-shrink:0" onclick="ytFetch('scan')">&#x25B6; Load</button>
+          <button class="btn btn-ghost" id="yt-scan-clear" style="font-size:10px;padding:5px 8px;flex-shrink:0;color:var(--muted);display:none" onclick="ytClear('scan')" title="Remove transcript">&#x2715;</button>
+        </div>
+        <div id="yt-scan-stat" style="font-size:9.5px;color:var(--muted);margin-top:3px;min-height:13px"></div>
+      </div>
+      <button id="scan-btn" class="btn btn-p btn-full mt10" onclick="doShot('scan')" disabled>&#x1F4F8; Screenshot &amp; Scan</button>
     </div>
     <!-- Legend -->
     <div class="row mt4" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -464,6 +472,14 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         🖼 Attach Images (unlimited)<input type="file" accept="image/*" multiple style="display:none" onchange="attachImages(this,'qa')">
       </label>
       <div id="img-attach-qa"></div>
+      <div style="margin-top:8px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="yt-qa-inp" placeholder="Paste YouTube link for transcript context (optional)…" style="flex:1;font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;outline:none">
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 10px;white-space:nowrap;flex-shrink:0" onclick="ytFetch('qa')">&#x25B6; Load</button>
+          <button class="btn btn-ghost" id="yt-qa-clear" style="font-size:10px;padding:5px 8px;flex-shrink:0;color:var(--muted);display:none" onclick="ytClear('qa')" title="Remove transcript">&#x2715;</button>
+        </div>
+        <div id="yt-qa-stat" style="font-size:9.5px;color:var(--muted);margin-top:3px;min-height:13px"></div>
+      </div>
       <button class="btn btn-p btn-full mt8" id="qa-btn" onclick="qaAsk()">⚡ Get Answer</button>
     </div>
     <div id="qa-stat" style="font-size:10px;color:var(--muted);margin:5px 0 3px"></div>
@@ -921,7 +937,9 @@ async function doShot(mode, region) {
   animProg(pbarId,0,35,700);
   const ctxBoxes = getContextBoxes(isM?"math":"scan");
   const extraImgs = [...(_attachedImages[tabKey]||[])];
-  const body = { hwnd, mode, extra_context: ctxBoxes, extra_images: extraImgs };
+  const ytCtx = ytGetContext(isM ? "math" : "scan");
+  const allCtx = ytCtx ? [...ctxBoxes, ytCtx] : ctxBoxes;
+  const body = { hwnd, mode, extra_context: allCtx, extra_images: extraImgs };
   if (region) body.region = region;
   const d = await post("/api/screenshot", body).catch(e=>({error:e.toString()}));
   animProg(pbarId,35,100,500);
@@ -1304,7 +1322,9 @@ async function qaAsk() {
   q("#qa-empty").style.display="none";
   const qaCtx = getContextBoxes("qa");
   const qaImgs = [...(_attachedImages.qa||[])];
-  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu",extra_context:qaCtx,extra_images:qaImgs}).catch(e=>({error:e.toString()}));
+  const ytQaCtx = ytGetContext("qa");
+  const allQaCtx = ytQaCtx ? [...qaCtx, ytQaCtx] : qaCtx;
+  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu",extra_context:allQaCtx,extra_images:qaImgs}).catch(e=>({error:e.toString()}));
   clearContextBoxes("qa");
   _attachedImages.qa = []; renderImageChips("qa");
   btn.disabled=false; btn.textContent="⚡ Get Answer";
@@ -2325,6 +2345,48 @@ function closeWindow() {
 document.querySelectorAll(".tab").forEach(b => {
   b.addEventListener("click", () => switchTab(b.dataset.t));
 });
+
+
+// ══════════════════════════════════════════════════════
+//  YOUTUBE TRANSCRIPT
+// ══════════════════════════════════════════════════════
+const _ytTranscript = { scan: null, qa: null };
+
+async function ytFetch(tab) {
+  const inp = document.getElementById('yt-' + tab + '-inp');
+  const stat = document.getElementById('yt-' + tab + '-stat');
+  const clearBtn = document.getElementById('yt-' + tab + '-clear');
+  if (!inp) return;
+  const url = inp.value.trim();
+  if (!url) { stat.textContent = 'Paste a YouTube link first.'; return; }
+  stat.style.color = 'var(--accent2)';
+  stat.textContent = 'Fetching transcript...';
+  const r = await post('/api/youtube_transcript', { manual_url: url }).catch(e => ({ ok: false, error: e.toString() }));
+  if (!r.ok) {
+    stat.style.color = 'var(--red)';
+    stat.textContent = 'Error: ' + (r.error || 'Failed');
+    _ytTranscript[tab] = null;
+    return;
+  }
+  _ytTranscript[tab] = r.transcript;
+  stat.style.color = 'var(--green)';
+  stat.textContent = 'Transcript loaded (' + r.transcript.split(' ').length + ' words) — will be used as context';
+  if (clearBtn) clearBtn.style.display = 'inline-flex';
+}
+
+function ytClear(tab) {
+  _ytTranscript[tab] = null;
+  const inp = document.getElementById('yt-' + tab + '-inp');
+  const stat = document.getElementById('yt-' + tab + '-stat');
+  const clearBtn = document.getElementById('yt-' + tab + '-clear');
+  if (inp) inp.value = '';
+  if (stat) { stat.textContent = ''; stat.style.color = 'var(--muted)'; }
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+
+function ytGetContext(tab) {
+  return _ytTranscript[tab] ? '[YOUTUBE VIDEO TRANSCRIPT]:\n' + _ytTranscript[tab] : null;
+}
 
 boot();
 </script>

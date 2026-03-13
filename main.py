@@ -1300,32 +1300,63 @@ def api_qa_route():
 
 @app_flask.route("/api/humanize", methods=["POST"])
 def api_humanize():
-    data = request.json or {}
-    text = data.get("text","").strip()
-    action = data.get("action","humanize")  # humanize | longer | shorter
+    data   = request.json or {}
+    text   = data.get("text","").strip()
+    action = data.get("action","humanize")
+    step   = max(1, min(int(data.get("step", 1)), 10))
+    hlevel = max(1, min(int(data.get("humanize_level", 1)), 10))
     if not text: return jsonify({"error":"No text"})
     client = get_client()
-    p_humanize = f"""Rewrite this so it sounds like a regular student wrote it — casual, simple, natural. Keep the exact meaning but use everyday words a teenager would actually say. AVOID: words like "descending", "ascending", "notably", "furthermore", "exemplifies", "illuminates", "underscores", "demonstrates", "pivotal", "crucial", "significant", "delve", "realm", "foster", "leverage", "utilize", "facilitate", "encompasses", "multifaceted", "nuanced". Use short sentences. Sound slightly imperfect like a real student. Give a slightly different version each time. Return only the rewritten text, nothing else.
 
-Text: {text}
+    word_count = len(text.split())
 
-Rewritten:"""
-    p_longer   = f"""Make this longer by adding more explanation and detail. Keep the same casual student tone. Sound like a student who is adding more of their thoughts. Don't use fancy vocabulary. Return only the expanded text, nothing else.
+    if action == "longer":
+        add    = step * 12
+        tokens = word_count + add + 30   # tight ceiling: current + add + small buffer
+        p = (
+            f"Add exactly about {add} words to this text — not more. "
+            "Keep the same casual student tone. Simple words, short sentences. "
+            "Just add a little more, do NOT write a full essay. "
+            "Return only the expanded text, nothing else.\n\n"
+            f"Text: {text}\n\nExpanded:"
+        )
 
-Text: {text}
+    elif action == "shorter":
+        remove = step * 12
+        target = max(6, word_count - remove)
+        tokens = target + 20
+        p = (
+            f"Shorten this to about {target} words (it is currently {word_count} words). "
+            "Cut the least important parts. Do NOT add anything new. "
+            "Return only the shortened text, nothing else.\n\n"
+            f"Text: {text}\n\nShortened:"
+        )
 
-Expanded:"""
-    p_shorter  = f"""Make this shorter and more to the point. Keep the core meaning. Even if it's already short, find a way to trim it further — cut any redundant words. If it's down to just a few words, keep those core words only. Return only the shortened text, nothing else.
+    else:
+        tokens = word_count + 40
+        if hlevel <= 2:
+            tone = "like a regular student — casual, simple, slightly imperfect."
+        elif hlevel <= 4:
+            tone = "like a teenager, very casual, use words like kinda, basically, like, tbh."
+        elif hlevel <= 6:
+            tone = "like a kid who barely paid attention. Super casual, filler words, imperfect grammar."
+        elif hlevel <= 8:
+            tone = "like a little kid. Very simple words, short sentences, sounds confused but right."
+        else:
+            tone = "like a toddler. Extremely simple. Very short. Maybe repeat words. Cute and dumb but the idea is still there."
+        banned = "furthermore, notably, demonstrates, pivotal, crucial, significant, utilize, facilitate, encompasses, nuanced, delve, realm, leverage, foster, underscores, illuminates, exemplifies"
+        p = (
+            f"Rewrite this so it sounds {tone} "
+            f"NEVER use: {banned}. Same length roughly. "
+            "Return only the rewritten text, nothing else.\n\n"
+            f"Text: {text}\n\nRewritten:"
+        )
 
-Text: {text}
-
-Shortened:"""
-    prompts = {"humanize": p_humanize, "longer": p_longer, "shorter": p_shorter}
     try:
         resp = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role":"user","content":prompts.get(action, prompts["humanize"])}],
-            max_tokens=400, temperature=0.85
+            messages=[{"role":"user","content":p}],
+            max_tokens=min(tokens, 600), temperature=0.75
         )
         return jsonify({"result": resp.choices[0].message.content.strip()})
     except Exception as e:
@@ -1623,6 +1654,54 @@ def api_window_close():
     # Instant exit — don't wait for pywebview/Edge cleanup, just die
     threading.Thread(target=lambda: (time.sleep(0.15), os._exit(0)), daemon=True).start()
     return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════════════
+#  YOUTUBE TRANSCRIPT
+# ══════════════════════════════════════════════════════════════════════
+def _extract_video_id(url_or_id):
+    """Extract YouTube video ID from a URL or return as-is if already an ID."""
+    url_or_id = url_or_id.strip()
+    m = re.search(r'(?:v=|/v/|youtu\.be/|/embed/|/shorts/)([A-Za-z0-9_-]{11})', url_or_id)
+    if m:
+        return m.group(1)
+    if re.fullmatch(r'[A-Za-z0-9_-]{11}', url_or_id):
+        return url_or_id
+    return url_or_id
+
+@app_flask.route("/api/youtube_transcript", methods=["POST"])
+def api_youtube_transcript():
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+    except ImportError:
+        return jsonify({"ok": False, "error": "youtube-transcript-api not installed. Run: pip install youtube-transcript-api"}), 500
+
+    data = request.get_json(silent=True) or {}
+    raw = (data.get("manual_url") or data.get("video_id") or "").strip()
+    if not raw:
+        return jsonify({"ok": False, "error": "No URL or video ID provided"}), 400
+
+    video_id = _extract_video_id(raw)
+    try:
+        # v1.x API: instantiate, then call .fetch()
+        ytt = YouTubeTranscriptApi()
+        fetched = ytt.fetch(video_id, languages=["en", "en-US", "en-GB"])
+        text = " ".join(snippet.text for snippet in fetched).strip()
+        return jsonify({"ok": True, "transcript": text})
+    except NoTranscriptFound:
+        # No English — try fetching whatever language is available
+        try:
+            ytt = YouTubeTranscriptApi()
+            fetched = ytt.fetch(video_id)
+            text = " ".join(snippet.text for snippet in fetched).strip()
+            return jsonify({"ok": True, "transcript": text})
+        except Exception as e2:
+            _log_exc("youtube_transcript fallback", e2)
+            return jsonify({"ok": False, "error": str(e2)}), 400
+    except TranscriptsDisabled:
+        return jsonify({"ok": False, "error": "Transcripts are disabled for this video"}), 400
+    except Exception as e:
+        _log_exc("youtube_transcript", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 # ══════════════════════════════════════════════════════════════════════
 #  MAIN
