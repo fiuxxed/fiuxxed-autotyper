@@ -292,8 +292,10 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 #img-attach-scan,#img-attach-qa{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .music-src-tab:hover{color:var(--text2)}
 .music-src-tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
-.music-nav-btn:hover:not(:disabled){background:var(--accentbg);color:var(--accent2)}
-.music-nav-btn:disabled{opacity:.4;cursor:not-allowed}
+.music-page-btn{padding:6px 14px;font-size:11px}
+.music-page-btn:hover:not(:disabled){background:var(--accentbg);color:var(--accent2)}
+.music-page-btn:disabled{opacity:.4;cursor:not-allowed}
+.music-page-num{font-size:11px;font-weight:600;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -601,6 +603,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         </div>
       </div>
       <div id="music-stat" style="font-size:10.5px;color:var(--muted);margin:4px 0 6px"></div>
+      <div id="music-page-row" style="display:none;align-items:center;justify-content:center;gap:12px;margin:8px 0;flex-wrap:wrap"></div>
       <div id="music-results"></div>
     </div>
 
@@ -624,14 +627,12 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     <!-- Shared player — YouTube embed or HTML audio -->
     <div id="music-player-wrap" style="margin-top:10px;display:none">
       <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">
-        <div style="padding:9px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px">
+        <div style="padding:9px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
           <span style="font-size:16px" id="music-player-ico">▶</span>
-          <button class="btn btn-ghost music-nav-btn" id="music-prev-btn" onclick="musicPrev()" title="Previous" style="padding:6px 10px;font-size:14px;min-width:36px;display:none">◀</button>
           <div style="flex:1;min-width:0">
             <div style="font-size:11.5px;font-weight:700;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis" id="music-now-title">Nothing playing</div>
             <div style="font-size:9.5px;color:var(--muted)" id="music-now-src"></div>
           </div>
-          <button class="btn btn-ghost music-nav-btn" id="music-next-btn" onclick="musicNext()" title="Next" style="padding:6px 10px;font-size:14px;min-width:36px;display:none">▶</button>
           <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="stopMusic()">✕ Stop</button>
         </div>
         <!-- YouTube iframe -->
@@ -1832,7 +1833,10 @@ async function post(url, data) {
 // ══════════════════════════════════════════════════════
 let musicSrc = "yt";            // "yt" | "local"
 let currentVideoId = null;
-let musicYTResults = [];        // current YouTube search results for prev/next
+let musicYTResults = [];        // current page of YouTube results
+let currentSearchPage = 1;
+let hasNextPage = false;
+let hasPrevPage = false;
 let localFiles = [];            // all scanned local files
 let localFilesFiltered = [];    // after search filter
 
@@ -1846,24 +1850,35 @@ function setMusicSrc(src) {
 }
 
 // ── YouTube ──────────────────────────────────────────
-async function musicSearch() {
+async function musicSearch(page) {
   const query = q("#music-inp").value.trim();
   if (!query) return;
-  const stat = q("#music-stat"); const res = q("#music-results");
+  if (page == null) page = 1;
+  const stat = q("#music-stat"); const res = q("#music-results"); const pageRow = q("#music-page-row");
   stat.innerHTML = `<span class="loading">🔍 Searching for "${esc(query)}"…</span>`;
+  if (pageRow) pageRow.style.display = "none";
   res.innerHTML = "";
 
-  // Use backend proxy — avoids CORS, tries all instances server-side
-  const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
+  const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}&page=${page}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
 
-  if (r.error || !r.results || !r.results.length) {
+  if (r.error || !r.results) {
     musicYTResults = [];
     stat.innerHTML = `<span style="color:var(--orange)">⚠ ${esc(r.error||"No results found.")} Try a different search.</span>`;
     return;
   }
 
   musicYTResults = r.results;
-  stat.textContent = `${r.results.length} results for "${query}"`;
+  currentSearchPage = r.page != null ? r.page : 1;
+  hasNextPage = !!r.has_next;
+  hasPrevPage = !!r.has_prev;
+  stat.textContent = r.results.length ? `${r.results.length} results for "${query}"` : `No more results for "${query}"`;
+  if (pageRow) {
+    pageRow.style.display = "flex";
+    pageRow.innerHTML = `
+      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage - 1})" ${!hasPrevPage ? "disabled" : ""} title="Previous page">◀ Prev</button>
+      <span class="music-page-num">Page ${currentSearchPage}</span>
+      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage + 1})" ${!hasNextPage ? "disabled" : ""} title="Next page">Next ▶</button>`;
+  }
   res.innerHTML = "";
   r.results.forEach(v => {
     const dur = v.duration ? fmtDur(v.duration) : "";
@@ -1916,35 +1931,6 @@ function playYT(videoId, title) {
   };
 
   iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
-  updateMusicNavButtons();
-}
-
-function updateMusicNavButtons() {
-  const prevBtn = q("#music-prev-btn"); const nextBtn = q("#music-next-btn");
-  if (!prevBtn || !nextBtn) return;
-  const show = musicSrc === "yt" && musicYTResults && musicYTResults.length > 0;
-  prevBtn.style.display = show ? "" : "none";
-  nextBtn.style.display = show ? "" : "none";
-  if (!show) return;
-  const idx = currentVideoId ? musicYTResults.findIndex(v => v.videoId === currentVideoId) : -1;
-  prevBtn.disabled = idx <= 0;
-  nextBtn.disabled = idx < 0 || idx >= musicYTResults.length - 1;
-}
-
-function musicPrev() {
-  if (!musicYTResults.length || !currentVideoId) return;
-  const idx = musicYTResults.findIndex(v => v.videoId === currentVideoId);
-  if (idx <= 0) return;
-  const prev = musicYTResults[idx - 1];
-  playYT(prev.videoId, prev.title || "Unknown");
-}
-
-function musicNext() {
-  if (!musicYTResults.length || !currentVideoId) return;
-  const idx = musicYTResults.findIndex(v => v.videoId === currentVideoId);
-  if (idx < 0 || idx >= musicYTResults.length - 1) return;
-  const next = musicYTResults[idx + 1];
-  playYT(next.videoId, next.title || "Unknown");
 }
 
 // ── Local Files ──────────────────────────────────────
@@ -2026,7 +2012,6 @@ function showPlayer(type, title, srcLabel) {
   q("#music-player-ico").textContent     = "▶";
   if(type==="yt") q("#music-local-player").querySelector("audio").pause();
   if(type==="local") q("#music-iframe").src="";
-  updateMusicNavButtons();
   wrap.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 

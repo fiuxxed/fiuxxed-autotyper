@@ -1473,15 +1473,12 @@ def api_music_search():
     # ── Primary: yt-dlp ──────────────────────────────────────
     if HAS_YTDLP:
         try:
-            # Use cache if same query and we have enough results for this page
+            # Use cache if same query and we have cached results
             if query == _music_search_cache_query and _music_search_cache_results is not None:
-                if start < len(_music_search_cache_results):
-                    return return_paginated(_music_search_cache_results)
-                # Page beyond cache — need to refetch (e.g. they went to page 4)
-                if page == 1:
-                    _music_search_cache_results = None  # force refetch below
+                return return_paginated(_music_search_cache_results)  # slice may be empty if page beyond cache
 
-            if _music_search_cache_query != query or _music_search_cache_results is None or page > 1:
+            # Cache miss — fetch up to 50 results
+            if _music_search_cache_query != query or _music_search_cache_results is None:
                 # Fetch up to 50 so we have ~3 pages
                 ydl_opts = {
                     "quiet": True,
