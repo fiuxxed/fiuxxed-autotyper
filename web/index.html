@@ -18,7 +18,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{height:100%;-webkit-text-size-adjust:100%}
-html,body,#app,#content,#tabs,#sbody,.panel,#panels,#sbar,.card,.scan-card,.scan-results,.qa-hist,.math-results,input,select,textarea,button{-webkit-app-region:no-drag!important;app-region:no-drag!important}
+/* Drag only from title bar: entire app no-drag, then only #drag-region is draggable */
+#app,#app *{-webkit-app-region:no-drag!important;app-region:no-drag!important}
+#drag-region{display:flex;align-items:center;gap:10px;flex:1;padding:0 12px;height:100%;-webkit-app-region:drag!important;app-region:drag!important;cursor:grab}
+#drag-region:active{cursor:grabbing}
 body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;line-height:1.5;transform:translateZ(0)}
 /* FIX: Removed the rule that made html,body background:transparent – now solid bg from body */
@@ -29,9 +32,7 @@ body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 #app{display:flex;flex-direction:column;height:calc(100vh - 30px);margin:12px;border-radius:14px;overflow:hidden;box-shadow:0 0 40px 8px #7c3aed55,0 0 0 1px #3a2e66;background:var(--bg)}
 /* ── Custom Frameless Titlebar ── */
-#titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;-webkit-app-region:drag;app-region:drag;position:relative;z-index:10;user-select:none}#titlebar button,#titlebar .btn,#tb-close,#tb-min,#tb-settings{-webkit-app-region:no-drag;app-region:no-drag}
-#drag-region{display:flex;align-items:center;gap:10px;flex:1;padding:0 12px;height:100%;cursor:grab;-webkit-app-region:drag}
-#drag-region:active{cursor:grabbing}
+#titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;position:relative;z-index:10;user-select:none}
 .tb-logo{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 0 14px #7c3aed55;pointer-events:none}
 .tb-brand{display:flex;flex-direction:column;pointer-events:none}
 .tb-title{font-size:12.5px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:.01em}
@@ -188,7 +189,8 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .step-txt{font-size:11.5px;line-height:1.55}
 .step-exp{font-size:10.5px;color:var(--muted);margin-top:2px}
 /* Vertical method */
-.vertical-method{font-family:'Consolas',monospace;font-size:12px;line-height:1.7;background:var(--card);padding:12px;border-radius:var(--rs);color:var(--text2);white-space:pre;overflow-x:auto}
+.vertical-method{font-family:'Consolas','Cambria Math',monospace;font-size:15px;line-height:2;background:var(--card);padding:16px;border-radius:var(--rs);color:#fff;white-space:pre;overflow-x:auto;text-align:right;letter-spacing:.02em;min-height:2.5em}
+.math-display{font-family:'Consolas','Cambria Math',monospace;font-size:18px;font-weight:700;color:#fff;text-align:right;padding:14px 18px;background:linear-gradient(135deg,#1a1530 0%,#0d0c18 100%);border-radius:var(--rs);border:1px solid var(--accent);letter-spacing:.03em;line-height:1.8;white-space:pre-wrap;word-break:break-all}
 .humanize-bar{padding:8px 12px;border-top:1px solid var(--border);background:var(--card2)}
 .humanize-out{background:var(--surface);border:1px solid var(--accent);border-radius:var(--rs);padding:9px 12px;font-size:11px;color:var(--text2);margin-bottom:7px;line-height:1.6;white-space:pre-wrap}
 .ctx-box{position:relative;margin-bottom:6px}
@@ -200,7 +202,8 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .math-graph{text-align:center;padding:4px 0 8px}
 .math-graph img{max-width:100%;border-radius:var(--rs)}
 .math-no-graph{color:var(--muted);font-size:10.5px;text-align:center;padding:12px;font-style:italic}
-.math-ans-bar{background:var(--greenbg);border-top:1px solid var(--green);padding:10px 14px;color:var(--green);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
+.math-ans-bar{background:var(--greenbg);border-top:1px solid var(--green);padding:12px 14px;color:var(--green);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.math-ans-bar .math-display{margin-top:6px;width:100%;box-sizing:border-box}
 .formula-lib-note{background:var(--accentbg);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px;font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:7px}
 /* Q&A */
 .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
@@ -289,6 +292,8 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 #img-attach-scan,#img-attach-qa{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .music-src-tab:hover{color:var(--text2)}
 .music-src-tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
+.music-nav-btn:hover:not(:disabled){background:var(--accentbg);color:var(--accent2)}
+.music-nav-btn:disabled{opacity:.4;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -296,7 +301,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 
 <div id="titlebar">
   <!-- FIX: Added onmousedown="dragWindow()" to make titlebar draggable -->
-  <div id="drag-region">
+  <div id="drag-region" class="pywebview-drag-region" onmousedown="dragWindow()">
     <div class="tb-logo">⌨</div>
     <div class="tb-brand">
       <span class="tb-title">Fiuxxed's AutoTyper</span>
@@ -347,7 +352,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <span class="lbl" style="margin:0">QUICK WPM</span>
         <span id="wpm-disp" style="font-size:13px;font-weight:700;color:var(--accent2)">80 wpm</span>
       </div>
-      <input type="range" id="wpm-sl" min="10" max="300" value="80" class="mt8" oninput="setWpm(this.value)">
+      <input type="range" id="wpm-sl" min="10" max="300" value="80" class="mt8" oninput="setWpm(this.value)" onchange="flushSaveS()">
       <div class="presets">
         <div class="preset" onclick="setWpm(30)">🐢<br>30</div>
         <div class="preset" onclick="setWpm(60)">🚶<br>60</div>
@@ -619,12 +624,14 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     <!-- Shared player — YouTube embed or HTML audio -->
     <div id="music-player-wrap" style="margin-top:10px;display:none">
       <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">
-        <div style="padding:9px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <div style="padding:9px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px">
           <span style="font-size:16px" id="music-player-ico">▶</span>
+          <button class="btn btn-ghost music-nav-btn" id="music-prev-btn" onclick="musicPrev()" title="Previous" style="padding:6px 10px;font-size:14px;min-width:36px;display:none">◀</button>
           <div style="flex:1;min-width:0">
             <div style="font-size:11.5px;font-weight:700;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis" id="music-now-title">Nothing playing</div>
             <div style="font-size:9.5px;color:var(--muted)" id="music-now-src"></div>
           </div>
+          <button class="btn btn-ghost music-nav-btn" id="music-next-btn" onclick="musicNext()" title="Next" style="padding:6px 10px;font-size:14px;min-width:36px;display:none">▶</button>
           <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="stopMusic()">✕ Stop</button>
         </div>
         <!-- YouTube iframe -->
@@ -765,9 +772,18 @@ function onTxtChange() {
   S.text = t;
 }
 
+let _saveSTimer = null;
+function scheduleSaveS() {
+  clearTimeout(_saveSTimer);
+  _saveSTimer = setTimeout(() => { _saveSTimer = null; saveS(); }, 400);
+}
+function flushSaveS() {
+  if (_saveSTimer) { clearTimeout(_saveSTimer); _saveSTimer = null; saveS(); }
+}
 function setWpm(v) {
   v = parseInt(v)||80;
-  q("#wpm-sl").value = v; setWpmDisplay(v); q("#sv-wpm").textContent = v; S.wpm = v; saveS();
+  q("#wpm-sl").value = v; setWpmDisplay(v); q("#sv-wpm").textContent = v; S.wpm = v;
+  scheduleSaveS();
 }
 function setWpmDisplay(v){ q("#wpm-disp").textContent = v+" wpm"; q("#sv-wpm").textContent = v; }
 
@@ -1195,16 +1211,17 @@ function renderMathCard(p, i, cont) {
       </div>
     </div>`).join("");
 
-  // Vertical method HTML
+  const pt = (p.problem_type || "").toUpperCase();
+  const vertNotApplicableMsg = pt === "FILL_BLANK" ? "Fill-in-the-blank — answer is the value(s) for the blank(s)." :
+    pt === "MULTIPLE_CHOICE" ? "Multiple choice — select the correct option(s)." :
+    pt === "GEOMETRY" ? "Geometry/diagram — see Diagram tab and explanation." : "Vertical column layout not applicable for this problem.";
   const vertHtml = p.vertical_method
     ? `<div class="math-content" id="mc-vert-${i}">
         <div style="font-size:9px;font-weight:700;color:var(--accent2);margin-bottom:8px;letter-spacing:.05em">VERTICAL / COLUMN METHOD</div>
         <div class="vertical-method">${esc(p.vertical_method)}</div>
       </div>`
     : `<div class="math-content" id="mc-vert-${i}">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;font-style:italic">
-          Vertical method not applicable for this problem type.
-        </div>
+        <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;font-style:italic">${esc(vertNotApplicableMsg)}</div>
       </div>`;
 
   // Graph HTML
@@ -1225,19 +1242,21 @@ function renderMathCard(p, i, cont) {
         <div class="math-no-graph">No graph available for this problem type.</div>
       </div>`;
 
+  const typeLabel = p.problem_type ? p.problem_type.replace(/_/g," ") : "";
   card.innerHTML=`
     <div class="math-card-head" onclick="toggleMathCard(${i})">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div class="math-card-title">📐 Problem ${label}</div>
+        ${typeLabel ? `<span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">${esc(typeLabel)}</span>` : ""}
         ${statusBadge}
         ${p.confident===false?'<span class="badge badge-warn">⚠ Uncertain</span>':""}
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">${esc((p.problem||"").substring(0,55))}${(p.problem||"").length>55?"…":""}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-        <div class="math-card-ans">${esc(p.answer||"")}</div>
-        <div style="font-size:11px;color:var(--muted);margin-left:auto" id="mc-arrow-${i}">▼</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">
+        <div class="math-display" style="flex:1;min-width:0">${esc(p.answer||"")}</div>
+        <div style="font-size:11px;color:var(--muted);flex-shrink:0" id="mc-arrow-${i}">▼</div>
       </div>
     </div>
     ${p.answered && p.user_answer ? `<div style="padding:7px 14px;font-size:10.5px;color:var(--muted);background:var(--card2);border-top:1px solid var(--border)">Their answer: <span style="color:${p.is_correct===false?'var(--red)':"var(--text2)"};font-weight:600">${esc(p.user_answer)}</span></div>` : ""}
@@ -1254,8 +1273,9 @@ function renderMathCard(p, i, cont) {
       ${vertHtml}
       ${graphHtml}
       <div class="math-ans-bar">
-        ✓ Answer: ${esc(p.answer||"")}
-        <button class="btn btn-s" style="margin-left:auto;font-size:10.5px;padding:5px 12px" onclick="atAnswer('${enc(p.answer||"")}')">⌨ AutoType</button>
+        <span style="flex-shrink:0">✓ Answer</span>
+        <div class="math-display" style="flex:1;min-width:0">${esc(p.answer||"")}</div>
+        <button class="btn btn-s" style="flex-shrink:0;font-size:10.5px;padding:5px 12px" onclick="atAnswer('${enc(p.answer||"")}')">⌨ AutoType</button>
       </div>
     </div>`;
 
@@ -1812,6 +1832,7 @@ async function post(url, data) {
 // ══════════════════════════════════════════════════════
 let musicSrc = "yt";            // "yt" | "local"
 let currentVideoId = null;
+let musicYTResults = [];        // current YouTube search results for prev/next
 let localFiles = [];            // all scanned local files
 let localFilesFiltered = [];    // after search filter
 
@@ -1836,10 +1857,12 @@ async function musicSearch() {
   const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
 
   if (r.error || !r.results || !r.results.length) {
+    musicYTResults = [];
     stat.innerHTML = `<span style="color:var(--orange)">⚠ ${esc(r.error||"No results found.")} Try a different search.</span>`;
     return;
   }
 
+  musicYTResults = r.results;
   stat.textContent = `${r.results.length} results for "${query}"`;
   res.innerHTML = "";
   r.results.forEach(v => {
@@ -1877,22 +1900,51 @@ function playYT(videoId, title) {
 
   const iframe = q("#music-iframe");
 
-  // YouTube signals embed-disabled by navigating to a specific URL
-  // We detect this by polling the iframe title after load
+  // Only show "can't embed" when we actually detect YouTube's unavailable page.
+  // Cross-origin usually blocks contentDocument access, giving empty string — do NOT treat that as unavailable.
   iframe.onload = () => {
     setTimeout(() => {
       try {
-        const t = iframe.contentDocument?.title || "";
-        if (t.toLowerCase().includes("unavailable") || t === "") {
+        const t = (iframe.contentDocument && iframe.contentDocument.title) ? iframe.contentDocument.title : "";
+        if (t && t.toLowerCase().includes("unavailable")) {
           if (notice) notice.style.display = "block";
         }
       } catch(e) {
-        // Cross-origin — can't read title, but if we got here the iframe loaded ok
+        // Cross-origin — can't read; assume embed is fine, don't show notice
       }
     }, 1500);
   };
 
   iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+  updateMusicNavButtons();
+}
+
+function updateMusicNavButtons() {
+  const prevBtn = q("#music-prev-btn"); const nextBtn = q("#music-next-btn");
+  if (!prevBtn || !nextBtn) return;
+  const show = musicSrc === "yt" && musicYTResults && musicYTResults.length > 0;
+  prevBtn.style.display = show ? "" : "none";
+  nextBtn.style.display = show ? "" : "none";
+  if (!show) return;
+  const idx = currentVideoId ? musicYTResults.findIndex(v => v.videoId === currentVideoId) : -1;
+  prevBtn.disabled = idx <= 0;
+  nextBtn.disabled = idx < 0 || idx >= musicYTResults.length - 1;
+}
+
+function musicPrev() {
+  if (!musicYTResults.length || !currentVideoId) return;
+  const idx = musicYTResults.findIndex(v => v.videoId === currentVideoId);
+  if (idx <= 0) return;
+  const prev = musicYTResults[idx - 1];
+  playYT(prev.videoId, prev.title || "Unknown");
+}
+
+function musicNext() {
+  if (!musicYTResults.length || !currentVideoId) return;
+  const idx = musicYTResults.findIndex(v => v.videoId === currentVideoId);
+  if (idx < 0 || idx >= musicYTResults.length - 1) return;
+  const next = musicYTResults[idx + 1];
+  playYT(next.videoId, next.title || "Unknown");
 }
 
 // ── Local Files ──────────────────────────────────────
@@ -1974,6 +2026,7 @@ function showPlayer(type, title, srcLabel) {
   q("#music-player-ico").textContent     = "▶";
   if(type==="yt") q("#music-local-player").querySelector("audio").pause();
   if(type==="local") q("#music-iframe").src="";
+  updateMusicNavButtons();
   wrap.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 

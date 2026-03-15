@@ -561,8 +561,9 @@ def capture_window(hwnd=None):
             raw = sct.grab(region)
             img = Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
     img = img.convert("RGB")
-    if img.width < 1200:
-        scale = 1200 / img.width
+    # Scale up for better AI readability (scan/math); min 1600px width
+    if img.width < 1600:
+        scale = 1600 / img.width
         img = img.resize((int(img.width * scale), int(img.height * scale)), Image.LANCZOS)
     img = ImageEnhance.Contrast(img).enhance(1.15)
     img = ImageEnhance.Sharpness(img).enhance(1.3)
@@ -823,14 +824,22 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 "- Plain numbers '1.', '2.', 'Q1' etc followed by text or a diagram = problems\n"
                 "- NEVER skip a numbered item just because it shows a diagram\n"
                 "- Geometry diagrams with angle measures, side lengths, or shape labels are ALL math problems\n\n"
+                "PROBLEM TYPES — adapt your output to what you see:\n"
+                "- EQUATION_SOLVE: solve for x (or variable). Give vertical_method as column layout.\n"
+                "- FILL_BLANK: one or more blanks to fill. answer = the word/number(s) that go in the blank(s).\n"
+                "- MULTIPLE_CHOICE: select one or more options. answer = the correct choice letter(s) and text.\n"
+                "- GEOMETRY: diagram, angles, sides. Use diagram_data and diagram_description.\n"
+                "- SHORT_ANSWER: brief numeric or symbolic answer.\n\n"
                 "For EACH problem provide ALL fields:\n"
+                "- problem_type: one of EQUATION_SOLVE, FILL_BLANK, MULTIPLE_CHOICE, GEOMETRY, SHORT_ANSWER\n"
                 "- problem_label: number/label if visible (e.g. '1.', 'Q3') — null if not visible\n"
                 "- problem: exact problem text. If it is a diagram problem describe it fully\n"
-                "  (e.g. 'Triangle LJK with angles: L=97 degrees, J=28 degrees, K=55 degrees. Order the sides from shortest to longest.')\n"
-                "- answer: the final answer clearly stated\n"
+                "- answer: CLEAN final answer. For equations: 'x = 57' or 'y = 2'. Not a long expression. For fill-in: the exact blank value(s). For MCQ: e.g. 'B) 42'\n"
                 "- steps: array of step-by-step solution strings\n"
                 "- explanations: array of plain English explanation per step (SAME length as steps)\n"
-                "- vertical_method: ALWAYS provide this. Show ONLY equations/calculations as numbered steps, no words. e.g. '1) HL = 1/2(HJ)\\n2) HJ = 2*HL\\n3) HJ = 126'. Never null.\n"
+                "- vertical_method: For EQUATION_SOLVE or when algebra is shown in columns, use a COLUMN layout: one equation per line, right-align style. Example (use \\n for newlines):\n"
+                "  '    5x - 16 = 4x + 41\\n           x = 57'\n"
+                "  Or: '  2x + 3 = 7\\n  2x = 4\\n  x = 2'. No prose, only equations. For fill-in/MCQ/geometry with no algebra column, use null or a brief calculation if needed.\n"
                 "- graph_eq: for ANY plottable function provide 'y=expr'. For geometry problems provide null\n"
                 "- diagram_data: for geometry/diagram problems, provide a JSON object with:\n"
                 "    points: {\"A\":[x,y], \"B\":[x,y], ...} — place points on a coordinate grid that accurately reflects the shape. Use real proportions from the image.\n"
@@ -850,10 +859,10 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                    if examine_examples else
                    "- Do NOT add extra worked examples or sample problems — solve the given problem only.\n\n")
                 + "Return ONLY valid JSON array (no markdown):\n"
-                '[{"problem_label":"1.","problem":"2x+3=7",'
+                '[{"problem_type":"EQUATION_SOLVE","problem_label":"1.","problem":"2x+3=7",'
                 '"steps":["Subtract 3: 2x=4","Divide by 2: x=2"],'
                 '"explanations":["Remove constant from left","Isolate x"],'
-                '"vertical_method":null,"answer":"x = 2",'
+                '"vertical_method":"  2x + 3 = 7\\n  2x = 4\\n  x = 2","answer":"x = 2",'
                 '"graph_eq":null,"diagram_data":null,"diagram_description":null,"has_graph":false,"confident":true}]\n'
                 "No math found: []"
             )}
@@ -903,10 +912,20 @@ def ai_qa(question, history, is_followup, extra_context=None, extra_images=None)
         messages = list(history) + [{"role":"user","content":_uc(f"{question}{ctx_block}\n\n[Follow-up. Be more detailed. 2-4 sentences max.]")}]
         max_tok = 400
     else:
-        sys_msg = ("You are a sharp assistant. Analyze the provided image(s) and answer directly." if has_images
-                   else "You are a sharp, direct assistant. Answer in ONE sentence, max 20 words. No intros. Just the answer.")
+        if has_images:
+            sys_msg = (
+                "You are an expert at analyzing images in detail. Look at the entire image carefully and use high-resolution detail. "
+                "When identifying living things (animals, plants, fungi, etc.): use specific, precise names — including rare, uncommon, or lesser-known species. "
+                "Prefer scientific names when the creature is unusual (e.g. 'axolotl, Ambystoma mexicanum' or 'satanic leaf-tailed gecko, Uroplatus phantasticus'). "
+                "For common species still give the exact common name (e.g. 'blue morpho butterfly' not just 'butterfly'). "
+                "For objects, text, or scenes: describe precisely and name anything you can identify. "
+                "Answer directly and concisely but with enough detail to be accurate and specific."
+            )
+            max_tok = 400
+        else:
+            sys_msg = "You are a sharp, direct assistant. Answer in ONE sentence, max 20 words. No intros. Just the answer."
+            max_tok = 120
         messages = [{"role":"system","content":sys_msg}, {"role":"user","content":_uc(question+ctx_block)}]
-        max_tok = 300 if has_images else 120
     resp = client.chat.completions.create(model=model, messages=messages, max_tokens=max_tok, temperature=0.4)
     answer = resp.choices[0].message.content.strip()
     if not is_followup:
@@ -932,6 +951,9 @@ _windows_cache = []
 _AOT_HWND    = None   # cached window handle
 _aot_thread  = None   # background watcher thread
 _is_dragging = False  # pause AOT watcher during window drag to prevent crash
+# Throttle apply_opacity / apply_always_on_top so rapid slider drags don't hammer win32 and crash
+_last_apply_time = 0.0
+_apply_throttle_sec = 0.12
 # Keep ctypes callback + hook alive at module level — local vars get GC'd and silently kill the hook
 _winevent_proc = None
 _winevent_hook = None
@@ -1033,6 +1055,11 @@ def _set_hwnd_topmost(hwnd, on_top):
 
 def apply_always_on_top(val):
     """Called whenever the setting changes — immediately applies it via native webview property."""
+    global _last_apply_time
+    now = time.time()
+    if now - _last_apply_time < _apply_throttle_sec:
+        return
+    _last_apply_time = now
     on_top = bool(val)
     if _webview_window:
         try:
@@ -1041,8 +1068,14 @@ def apply_always_on_top(val):
 
 def apply_opacity(val):
     """Set window opacity (0-100) using win32 layered window.
-    Always keeps WS_EX_LAYERED applied to prevent Chromium dropdown rendering bug."""
+    Always keeps WS_EX_LAYERED applied to prevent Chromium dropdown rendering bug.
+    Throttled so rapid slider drags don't hammer win32 and crash."""
+    global _last_apply_time
     if not HAS_WIN32: return
+    now = time.time()
+    if now - _last_apply_time < _apply_throttle_sec:
+        return
+    _last_apply_time = now
     hwnd = _AOT_HWND or _find_app_hwnd()
     if not hwnd: return
     try:
@@ -1409,45 +1442,77 @@ try:
 except ImportError:
     pass
 
+# Cache for YouTube search pagination: one query's full result set (up to 50), keyed by query
+_music_search_cache_query = None
+_music_search_cache_results = None
+
 @app_flask.route("/api/music/search")
 def api_music_search():
-    """Search YouTube via yt-dlp (reliable) or Invidious fallback."""
+    """Search YouTube via yt-dlp (reliable) or Invidious fallback. Supports ?page=1,2,3... (15 per page)."""
+    global _music_search_cache_query, _music_search_cache_results
     query = request.args.get("q", "").strip()
+    page = max(1, int(request.args.get("page", 1)))
     if not query:
-        return jsonify({"error": "No query", "results": []})
+        return jsonify({"error": "No query", "results": [], "page": 1, "has_prev": False, "has_next": False})
+
+    PAGE_SIZE = 15
+    start = (page - 1) * PAGE_SIZE
+
+    def return_paginated(full_list):
+        nonlocal page, start
+        total = len(full_list)
+        chunk = full_list[start:start + PAGE_SIZE]
+        return jsonify({
+            "results": chunk,
+            "page": page,
+            "has_prev": page > 1,
+            "has_next": start + PAGE_SIZE < total,
+            "total_cached": total,
+        })
 
     # ── Primary: yt-dlp ──────────────────────────────────────
     if HAS_YTDLP:
         try:
-            ydl_opts = {
-                "quiet": True,
-                "no_warnings": True,
-                "extract_flat": "in_playlist",
-                "default_search": "ytsearch15",
-                "skip_download": True,
-                "ignoreerrors": True,
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(f"ytsearch15:{query}", download=False)
-            entries = (info or {}).get("entries") or []
-            results = []
-            for v in entries[:15]:
-                if not v:
-                    continue
-                vid = v.get("id") or v.get("url","")
-                thumb = v.get("thumbnail","")
-                if not thumb and vid:
-                    thumb = f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg"
-                results.append({
-                    "videoId":  vid,
-                    "title":    v.get("title","Untitled"),
-                    "author":   v.get("uploader") or v.get("channel",""),
-                    "duration": v.get("duration") or 0,
-                    "thumb":    thumb,
-                })
-            if results:
-                return jsonify({"results": results})
-        except Exception as e:
+            # Use cache if same query and we have enough results for this page
+            if query == _music_search_cache_query and _music_search_cache_results is not None:
+                if start < len(_music_search_cache_results):
+                    return return_paginated(_music_search_cache_results)
+                # Page beyond cache — need to refetch (e.g. they went to page 4)
+                if page == 1:
+                    _music_search_cache_results = None  # force refetch below
+
+            if _music_search_cache_query != query or _music_search_cache_results is None or page > 1:
+                # Fetch up to 50 so we have ~3 pages
+                ydl_opts = {
+                    "quiet": True,
+                    "no_warnings": True,
+                    "extract_flat": "in_playlist",
+                    "default_search": "ytsearch50",
+                    "skip_download": True,
+                    "ignoreerrors": True,
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(f"ytsearch50:{query}", download=False)
+                entries = (info or {}).get("entries") or []
+                all_results = []
+                for v in entries:
+                    if not v:
+                        continue
+                    vid = v.get("id") or v.get("url","")
+                    thumb = v.get("thumbnail","")
+                    if not thumb and vid:
+                        thumb = f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg"
+                    all_results.append({
+                        "videoId":  vid,
+                        "title":    v.get("title","Untitled"),
+                        "author":   v.get("uploader") or v.get("channel",""),
+                        "duration": v.get("duration") or 0,
+                        "thumb":    thumb,
+                    })
+                _music_search_cache_query = query
+                _music_search_cache_results = all_results
+                return return_paginated(all_results)
+        except Exception:
             pass  # fall through to Invidious
 
     # ── Fallback: Invidious ──────────────────────────────────
@@ -1462,18 +1527,19 @@ def api_music_search():
     ]
     for base in instances:
         try:
+            # Invidious may support page param; try it
             url = (f"{base}/api/v1/search?q={urllib.parse.quote(query)}"
-                   f"&type=video&fields=videoId,title,author,lengthSeconds,videoThumbnails")
+                   f"&type=video&fields=videoId,title,author,lengthSeconds,videoThumbnails&page={page}")
             req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
                 data = json.loads(resp.read().decode())
             if not isinstance(data, list) or not data:
                 continue
             results = []
-            for v in data[:15]:
+            for v in data[:PAGE_SIZE]:
                 thumbs = v.get("videoThumbnails",[])
                 thumb = next((t["url"] for t in thumbs if t.get("quality")=="medium"),
-                             thumbs[0]["url"] if thumbs else "")
+                             thumbs[0].get("url","") if thumbs else "")
                 if thumb and thumb.startswith("/"):
                     thumb = base + thumb
                 results.append({
@@ -1484,7 +1550,12 @@ def api_music_search():
                     "thumb":   thumb,
                 })
             if results:
-                return jsonify({"results": results})
+                return jsonify({
+                    "results": results,
+                    "page": page,
+                    "has_prev": page > 1,
+                    "has_next": len(data) >= PAGE_SIZE,
+                })
         except Exception:
             continue
 
@@ -1879,6 +1950,7 @@ def main():
                 min_size=(420, 600),
                 resizable=True,
                 frameless=True,
+                easy_drag=False,   # Only drag from elements with class pywebview-drag-region (title bar)
                 transparent=False,                     # FIX: was True – now solid background
                 on_top=bool(cfg.get("always_on_top", True)),
                 background_color="#07070e",            # FIX: match your theme
