@@ -30,7 +30,7 @@ body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-#app{display:flex;flex-direction:column;height:calc(100vh - 30px);margin:12px;border-radius:14px;overflow:hidden;box-shadow:0 0 40px 8px #7c3aed55,0 0 0 1px #3a2e66;background:var(--bg)}
+#app{display:flex;flex-direction:column;height:calc(100vh - 30px);margin:12px;border-radius:14px;overflow:hidden;box-shadow:0 0 40px 8px #7c3aed55,0 0 0 1px #3a2e66;background:var(--bg);min-width:0}
 /* ── Custom Frameless Titlebar ── */
 #titlebar{display:flex;align-items:center;height:42px;background:linear-gradient(135deg,#0d0924 0%,#130d2a 100%);border-bottom:1px solid var(--border2);flex-shrink:0;position:relative;z-index:10;user-select:none}
 .tb-logo{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 0 14px #7c3aed55;pointer-events:none}
@@ -158,6 +158,11 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .math-card-correct{border-color:var(--green)!important}
 .math-card.math-card-wrong{border-color:var(--red)}
 .math-card.math-card-correct{border-color:var(--green)}
+.method-pill{display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.03em;white-space:nowrap}
+.horiz-chain{display:flex;flex-wrap:wrap;gap:0;margin-bottom:10px}
+.horiz-step{display:flex;align-items:center;gap:0}
+.horiz-step-box{background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);padding:7px 11px;font-size:11.5px;color:var(--text2);font-family:'Consolas',monospace;white-space:pre}
+.horiz-arrow{color:var(--accent);font-size:13px;padding:0 5px;flex-shrink:0}
 /* Music player */
 .music-search-wrap{display:flex;gap:8px;margin-bottom:12px}
 .music-results{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -172,7 +177,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .music-player-wrap iframe{width:100%;height:200px;border:none;display:block}
 .music-now{padding:8px 12px;background:var(--accentbg);font-size:10.5px;color:var(--text2);display:flex;align-items:center;gap:8px}
 .music-now-title{flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.math-card-head{background:var(--accenthl);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.math-card-head{background:var(--accenthl);padding:10px 14px;display:flex;flex-direction:column;gap:5px;cursor:pointer;user-select:none;min-width:0}
 .math-card-title{font-weight:700;font-size:12.5px;color:var(--accent2)}
 .math-card-ans{font-size:11px;color:var(--green);font-weight:600}
 .math-body{background:var(--surface);border-top:1px solid var(--border)}
@@ -183,14 +188,29 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .math-tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
 .math-content{padding:12px}
 .math-content.hidden{display:none}
-/* Math explanation */
-.step{display:flex;gap:9px;margin-bottom:7px;padding:8px 10px;background:var(--card);border-radius:var(--rs);border-left:3px solid var(--accent)}
-.step-n{background:var(--accent);color:var(--white);width:19px;height:19px;border-radius:50%;font-size:9.5px;font-weight:700;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.step-txt{font-size:11.5px;line-height:1.55}
-.step-exp{font-size:10.5px;color:var(--muted);margin-top:2px}
+/* Step list */
+.step{display:flex;gap:9px;margin-bottom:7px;padding:9px 11px;background:var(--card);border-radius:var(--rs);border-left:3px solid var(--accent)}
+.step-n{background:var(--accent);color:var(--white);width:20px;height:20px;border-radius:50%;font-size:9.5px;font-weight:700;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.step-txt{font-size:12px;line-height:1.5;color:var(--text);font-family:'Consolas',monospace}
+.step-exp{font-size:10.5px;color:var(--text2);margin-top:3px;line-height:1.55;font-family:inherit}
 /* Vertical method */
-.vertical-method{font-family:'Consolas','Cambria Math',monospace;font-size:15px;line-height:2;background:var(--card);padding:16px;border-radius:var(--rs);color:#fff;white-space:pre;overflow-x:auto;text-align:right;letter-spacing:.02em;min-height:2.5em}
-.math-display{font-family:'Consolas','Cambria Math',monospace;font-size:18px;font-weight:700;color:#fff;text-align:right;padding:14px 18px;background:linear-gradient(135deg,#1a1530 0%,#0d0c18 100%);border-radius:var(--rs);border:1px solid var(--accent);letter-spacing:.03em;line-height:1.8;white-space:pre-wrap;word-break:break-all}
+.vertical-method{font-family:'Consolas','Cambria Math',monospace;font-size:13px;font-weight:600;line-height:1;background:var(--card);padding:10px 16px;border-radius:var(--rs);color:#e9d5ff;overflow-x:auto;border:1px solid var(--border2);display:flex;flex-direction:column;align-items:center;gap:0}
+.vert-row{display:block;width:100%;text-align:center;padding:7px 16px;border-radius:5px;cursor:pointer;transition:background .15s,box-shadow .15s;white-space:pre;position:relative;letter-spacing:.03em;font-size:13px;font-weight:600;color:#e9d5ff;line-height:1.4}
+.vert-row:hover{background:rgba(124,58,237,.22);box-shadow:0 0 0 1.5px var(--accent)}
+.vert-row .copy-hint{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--muted);opacity:0;transition:opacity .15s;pointer-events:none;font-family:inherit}
+.vert-row:hover .copy-hint{opacity:1}
+.vert-row.copied{background:rgba(16,185,129,.15);box-shadow:0 0 0 1.5px var(--green);color:var(--green)}
+/* Horizontal chain */
+.horiz-chain{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-bottom:10px}
+.horiz-step{display:flex;align-items:center;flex-wrap:nowrap}
+.horiz-step-box{background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);padding:6px 11px;font-size:11px;color:var(--text2);font-family:'Consolas',monospace;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s;position:relative;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.horiz-step-box:hover{background:rgba(124,58,237,.22);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.horiz-step-box.copied{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)}
+.horiz-arrow{color:var(--accent2);font-size:14px;padding:0 4px;flex-shrink:0}
+/* Method pill */
+.method-pill{display:inline-flex;align-items:center;background:var(--card2);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.03em;white-space:nowrap}
+/* Answer display — smaller, not bold, wraps cleanly */
+.math-display{font-family:'Consolas','Cambria Math',monospace;font-size:13px;font-weight:500;color:#e9d5ff;text-align:center;padding:9px 13px;background:#0d0c18;border-radius:var(--rs);border:1px solid var(--accent);letter-spacing:.02em;line-height:1.55;white-space:normal;word-break:break-word;overflow-wrap:break-word}
 .humanize-bar{padding:8px 12px;border-top:1px solid var(--border);background:var(--card2)}
 .humanize-out{background:var(--surface);border:1px solid var(--accent);border-radius:var(--rs);padding:9px 12px;font-size:11px;color:var(--text2);margin-bottom:7px;line-height:1.6;white-space:pre-wrap}
 .ctx-box{position:relative;margin-bottom:6px}
@@ -205,6 +225,9 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .math-ans-bar{background:var(--greenbg);border-top:1px solid var(--green);padding:12px 14px;color:var(--green);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .math-ans-bar .math-display{margin-top:6px;width:100%;box-sizing:border-box}
 .formula-lib-note{background:var(--accentbg);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px;font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+/* Method section header */
+.method-section-lbl{font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.method-divider{height:1px;background:var(--border2);margin:10px 0}
 /* Q&A */
 .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
 .mode-btn{padding:9px;border-radius:var(--rs);cursor:pointer;border:1px solid var(--border);background:var(--card2);text-align:center;font-size:10.5px;font-weight:600;color:var(--muted);transition:all var(--t);user-select:none;font-family:inherit}
@@ -296,6 +319,22 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 .music-page-btn:hover:not(:disabled){background:var(--accentbg);color:var(--accent2)}
 .music-page-btn:disabled{opacity:.4;cursor:not-allowed}
 .music-page-num{font-size:11px;font-weight:600;color:var(--muted)}
+/* ── Write Tab ── */
+.write-modes{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.write-mode-btn{padding:8px 6px;border:1px solid var(--border);border-radius:var(--rs);background:var(--card2);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all var(--t);font-family:inherit;line-height:1.35}
+.write-mode-btn:hover{border-color:var(--accent);background:var(--accentbg);color:var(--accent2)}
+.write-mode-btn.on{border-color:var(--accent);background:var(--accentbg);color:var(--accent2)}
+.write-result{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:11px 13px;font-size:11.5px;color:var(--text);line-height:1.75;white-space:pre-wrap;word-break:break-word;margin-bottom:8px}
+.write-result b,.write-result strong{color:var(--accent2);font-weight:700}
+.write-section-head{font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.06em;margin:10px 0 4px}
+.doc-ctx-active{background:var(--greenbg);border:1px solid var(--green);border-radius:var(--rs);padding:7px 11px;font-size:10px;color:var(--green);display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.vocab-trigger{cursor:pointer;border-bottom:1px dashed var(--accent2);color:var(--accent2);font-size:10.5px}
+/* Local files sort/group toolbar */
+.local-sort-btn{padding:3px 9px;font-size:9.5px;font-weight:600;border:1px solid var(--border);border-radius:20px;background:var(--card2);color:var(--muted);cursor:pointer;transition:all var(--t);font-family:inherit;white-space:nowrap}
+.local-sort-btn:hover{border-color:var(--accent);color:var(--accent2);background:var(--accentbg)}
+.local-sort-btn.on{border-color:var(--accent);color:var(--accent2);background:var(--accentbg)}
+.local-group-header{font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.06em;padding:8px 0 4px;display:flex;align-items:center;gap:7px}
+.local-group-header::after{content:"";flex:1;height:1px;background:var(--border2)}
 </style>
 </head>
 <body>
@@ -322,9 +361,10 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
   <button class="tab" data-t="scanner">🔍 Scan</button>
   <button class="tab" data-t="math">📐 Math</button>
   <button class="tab" data-t="qa">💬 Q&A</button>
+  <button class="tab" data-t="write">✍ Write</button>
   <button class="tab" data-t="voice">🎤 Voice</button>
   <button class="tab" data-t="history">📋 History</button>
-  <button class="tab" data-t="music">🎵 Music</button>
+  <button class="tab" data-t="music">▶ YouTube</button>
 </div>
 
 <div id="panels">
@@ -400,8 +440,8 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
       <div id="scan-ctx-boxes" style="margin-top:10px"></div>
       <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:6px" onclick="addContextBox('scan')">＋ Add Extra Context</button>
       <div style="display:flex;gap:6px;margin-top:8px">
-        <label class="btn btn-ghost" style="font-size:10.5px;flex:1;cursor:pointer">
-          🖼 Attach Image<input type="file" accept="image/*" multiple style="display:none" onchange="attachImages(this,'scan')">
+        <label class="btn btn-ghost" style="font-size:10.5px;flex:1;cursor:pointer" title="Images, PDFs, and text files">
+          📎 Attach Files<input type="file" accept="image/*,.pdf,.txt,.md,.csv,.rtf,.docx,.doc" multiple style="display:none" onchange="attachFiles(this,'scan')">
         </label>
         <button class="btn btn-s" style="font-size:10.5px;flex:1" onclick="openRegionSelector('scan')" id="region-scan-btn" disabled>✂ Select Region</button>
       </div>
@@ -414,7 +454,7 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         </div>
         <div id="yt-scan-stat" style="font-size:9.5px;color:var(--muted);margin-top:3px;min-height:13px"></div>
       </div>
-      <button id="scan-btn" class="btn btn-p btn-full mt10" onclick="doShot('scan')" disabled>&#x1F4F8; Screenshot &amp; Scan</button>
+      <button id="scan-btn" class="btn btn-p btn-full mt10" onclick="doShot('scan')" disabled>📸 Screenshot &amp; Scan</button>
     </div>
     <!-- Legend -->
     <div class="row mt4" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -454,6 +494,15 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
         <div class="csel-menu" id="win-math-csel-menu"></div>
       </div>
       <div id="wtype-math" style="font-size:10px;color:var(--muted);margin-top:5px"></div>
+      <div id="math-ctx-boxes" style="margin-top:10px"></div>
+      <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:6px" onclick="addContextBox('math')">＋ Add Extra Context</button>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <label class="btn btn-ghost" style="font-size:10.5px;flex:1;cursor:pointer" title="Images, PDFs, and text files">
+          📎 Attach Files<input type="file" accept="image/*,.pdf,.txt,.md,.csv,.rtf,.docx,.doc" multiple style="display:none" onchange="attachFiles(this,'math')">
+        </label>
+        <button class="btn btn-s" style="font-size:10.5px;flex:1" onclick="openRegionSelector('math')" id="region-math-btn" disabled>✂ Select Region</button>
+      </div>
+      <div id="img-attach-math"></div>
       <button id="math-btn" class="btn btn-p btn-full mt10" onclick="doShot('math')" disabled>📸 Screenshot & Solve</button>
     </div>
     <div id="math-stat" style="font-size:10.5px;color:var(--muted);margin-bottom:6px"></div>
@@ -473,12 +522,37 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
     </div>
     <div class="card">
       <input type="text" id="qa-inp" placeholder="Ask a new question…" onkeydown="if(event.key==='Enter')qaAsk()">
+      <!-- Document Context Memory -->
+      <div id="qa-doc-ctx-active" class="doc-ctx-active" style="display:none;margin-top:8px">
+        <span>📄</span><span id="qa-doc-ctx-label" style="flex:1"></span>
+        <button class="btn btn-ghost" style="padding:3px 8px;font-size:9.5px" onclick="clearDocCtx()">✕ Clear</button>
+      </div>
       <div id="qa-ctx-boxes" style="margin-top:8px"></div>
       <button class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:4px" onclick="addContextBox('qa')">＋ Add Extra Context</button>
-      <label class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:4px;cursor:pointer">
-        🖼 Attach Images (unlimited)<input type="file" accept="image/*" multiple style="display:none" onchange="attachImages(this,'qa')">
+      <label class="btn btn-ghost btn-full" style="font-size:10.5px;margin-top:4px;cursor:pointer" title="Images, PDFs, and text files — all get sent as visual context to the AI">
+        📎 Attach Files — images, PDFs, text &amp; more<input type="file" accept="image/*,.pdf,.txt,.md,.csv,.rtf,.docx,.doc" multiple style="display:none" onchange="attachFiles(this,'qa')">
       </label>
       <div id="img-attach-qa"></div>
+      <!-- Screenshot capture for Q&A -->
+      <div class="divider" style="margin:8px 0 6px"></div>
+      <div class="lbl">SCREENSHOT CONTEXT</div>
+      <div class="rsb" style="margin-bottom:6px">
+        <div class="csel" id="win-qa-csel" style="flex:1;margin-right:8px">
+          <button class="csel-trigger" id="win-qa-csel-trigger" onclick="cselToggle('win-qa-csel')">
+            <span class="csel-val" id="win-qa-csel-val">— click Refresh —</span>
+            <span class="csel-arrow">▼</span>
+          </button>
+          <div class="csel-menu" id="win-qa-csel-menu"></div>
+        </div>
+        <button class="btn btn-s" style="padding:5px 10px;font-size:10.5px;flex-shrink:0" onclick="loadWins('qa')">⟳</button>
+      </div>
+      <div id="wtype-qa" style="font-size:10px;color:var(--muted);margin-bottom:6px"></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-s" style="font-size:10.5px;flex:1" onclick="openRegionSelector('qa')" id="region-qa-btn" disabled>✂ Select Region</button>
+        <button class="btn btn-ghost" style="font-size:10.5px;flex:1" onclick="_qaFullScreen()">📸 Full Screenshot</button>
+      </div>
+      <div id="qa-screen-stat" style="font-size:9.5px;color:var(--muted);margin-top:4px;min-height:13px"></div>
+      <div class="divider" style="margin:8px 0 6px"></div>
       <div style="margin-top:8px">
         <div style="display:flex;gap:6px;align-items:center">
           <input type="text" id="yt-qa-inp" placeholder="Paste YouTube link for transcript context (optional)…" style="flex:1;font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:inherit;outline:none">
@@ -495,6 +569,69 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
       <button class="btn btn-ghost" style="padding:4px 9px;font-size:10px" onclick="clearQa()">🗑 Clear</button>
     </div>
     <div id="qa-hist"><div class="empty" id="qa-empty">No answers yet.<br>Ask a question above!</div></div>
+  </div>
+
+  <!-- ─── WRITE ─── -->
+  <div class="panel" id="p-write">
+    <div class="rsb mt4" style="margin-bottom:2px">
+      <span style="font-size:14px;font-weight:700">✍ Writing Assistant</span>
+      <button class="btn btn-ghost" style="padding:5px 11px;font-size:10.5px" onclick="clearWrite()">🗑 Clear</button>
+    </div>
+    <p style="font-size:10px;color:var(--muted);margin:3px 0 10px">Essay analyzer, rewriter, outline builder, tone checker, citation formatter & more.</p>
+
+    <!-- Document Context Memory -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="rsb" style="margin-bottom:6px">
+        <span class="lbl" style="margin:0">📄 DOCUMENT CONTEXT</span>
+        <span style="font-size:9px;color:var(--muted)">stays active for all tools below</span>
+      </div>
+      <div id="write-doc-ctx-active" class="doc-ctx-active" style="display:none">
+        <span>📄</span><span id="write-doc-ctx-label" style="flex:1;font-size:10px"></span>
+        <button class="btn btn-ghost" style="padding:3px 8px;font-size:9.5px" onclick="clearWriteDocCtx()">✕ Clear</button>
+      </div>
+      <textarea id="write-doc-inp" placeholder="Paste your essay, document, or notes here — the AI will use this as context for everything below…" rows="4" style="margin-bottom:6px"></textarea>
+      <button class="btn btn-s btn-full" style="font-size:10.5px" onclick="setWriteDocCtx()">💾 Set as Document Context</button>
+    </div>
+
+    <!-- Mode selector -->
+    <div class="card">
+      <div class="lbl">SELECT TOOL</div>
+      <div class="write-modes">
+        <button class="write-mode-btn on" data-wm="analyze" onclick="setWriteMode('analyze')">🔍 Essay Analyzer<br><span style="font-weight:400;color:var(--muted)">grade + full feedback</span></button>
+        <button class="write-mode-btn" data-wm="rewrite" onclick="setWriteMode('rewrite')">✏️ Rewrite & Improve<br><span style="font-weight:400;color:var(--muted)">restyle your writing</span></button>
+        <button class="write-mode-btn" data-wm="outline" onclick="setWriteMode('outline')">📋 Outline Builder<br><span style="font-weight:400;color:var(--muted)">full essay structure</span></button>
+        <button class="write-mode-btn" data-wm="prompt_decode" onclick="setWriteMode('prompt_decode')">🎯 Prompt Decoder<br><span style="font-weight:400;color:var(--muted)">break down any prompt</span></button>
+        <button class="write-mode-btn" data-wm="tone" onclick="setWriteMode('tone')">🎨 Tone Detector<br><span style="font-weight:400;color:var(--muted)">style & voice analysis</span></button>
+        <button class="write-mode-btn" data-wm="argument" onclick="setWriteMode('argument')">⚖️ Argument Checker<br><span style="font-weight:400;color:var(--muted)">logic & weaknesses</span></button>
+        <button class="write-mode-btn" data-wm="summary" onclick="setWriteMode('summary')">📝 Summarizer<br><span style="font-weight:400;color:var(--muted)">1 sentence to bullets</span></button>
+        <button class="write-mode-btn" data-wm="citation" onclick="setWriteMode('citation')">🔖 Citation Formatter<br><span style="font-weight:400;color:var(--muted)">MLA / APA / Chicago</span></button>
+        <button class="write-mode-btn" data-wm="vocab" onclick="setWriteMode('vocab')">📖 Vocab & Synonyms<br><span style="font-weight:400;color:var(--muted)">word lookup & swaps</span></button>
+      </div>
+
+      <!-- Dynamic extra input — shown for modes that need it -->
+      <div id="write-extra-wrap" style="display:none;margin-bottom:8px">
+        <div class="lbl" id="write-extra-lbl">STYLE / FORMAT</div>
+        <input type="text" id="write-extra-inp" placeholder="">
+      </div>
+
+      <textarea id="write-inp" placeholder="Paste your text, essay, paragraph, prompt, or source info here…" rows="5" style="margin-bottom:8px"></textarea>
+      <button class="btn btn-p btn-full" id="write-btn" onclick="writeRun()">⚡ Run</button>
+    </div>
+
+    <div id="write-stat" style="font-size:10px;color:var(--muted);margin:5px 0 3px"></div>
+    <div id="write-result-wrap" style="display:none">
+      <div class="write-result" id="write-result-text"></div>
+      <div class="humanize-bar" id="write-hbar">
+        <div class="humanize-out" id="write-hout" style="display:none"></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn btn-s" style="font-size:10px;padding:4px 10px" onclick="writeAutoType()">⌨ AutoType</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="writeCopy()">📋 Copy</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('write-result-text','write-hout','write-hbar','humanize')">✍ Humanize</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('write-result-text','write-hout','write-hbar','longer')">📝 Longer</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="humanize('write-result-text','write-hout','write-hbar','shorter')">✂ Shorter</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ─── VOICE ─── -->
@@ -574,80 +711,109 @@ input[type=range]::-webkit-slider-thumb:hover{background:var(--accent2);transfor
 
   <!-- ─── MUSIC ─── -->
   <div class="panel" id="p-music">
-    <div style="font-size:14px;font-weight:700;margin-bottom:3px">🎵 Music Player</div>
-    <p style="font-size:10px;color:var(--muted);margin-bottom:10px">Play YouTube videos or your local music files.</p>
+
+    <!-- Header -->
+    <div class="rsb mt4" style="margin-bottom:3px">
+      <div>
+        <div style="font-size:14px;font-weight:700">▶ YouTube Player</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">Search YouTube — music, videos, anything</div>
+      </div>
+    </div>
 
     <!-- Source tabs -->
-    <div style="display:flex;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:12px">
-      <button class="music-src-tab on" id="msrc-yt"  onclick="setMusicSrc('yt')">▶ YouTube</button>
-      <button class="music-src-tab"    id="msrc-loc" onclick="setMusicSrc('local')">📁 Local Files</button>
+    <div style="display:flex;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;margin:10px 0 12px">
+      <button class="music-src-tab on" id="msrc-yt" onclick="setMusicSrc('yt')">▶ YouTube</button>
+      <button class="music-src-tab" id="msrc-loc" onclick="setMusicSrc('local')">📁 Local Files</button>
     </div>
 
     <!-- YouTube section -->
     <div id="music-yt-section">
       <div class="card">
-        <div class="lbl">SEARCH YOUTUBE</div>
-        <div class="row" style="gap:7px">
-          <input type="text" id="music-inp" placeholder="Artist, song, album…" onkeydown="if(event.key==='Enter')musicSearch()" style="flex:1">
-          <button class="btn btn-p" style="flex-shrink:0;padding:9px 14px" onclick="musicSearch()">🔍</button>
+        <div class="rsb" style="margin-bottom:8px">
+          <span class="lbl" style="margin:0">SEARCH YOUTUBE</span>
+          <span style="font-size:9px;color:var(--muted)">music · videos · podcasts · anything</span>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">
-          <span class="music-chip" onclick="musicQuick('lo-fi hip hop')">lo-fi</span>
-          <span class="music-chip" onclick="musicQuick('phonk mix')">phonk</span>
-          <span class="music-chip" onclick="musicQuick('study beats')">study</span>
-          <span class="music-chip" onclick="musicQuick('city pop')">city pop</span>
-          <span class="music-chip" onclick="musicQuick('drill rap')">drill</span>
-          <span class="music-chip" onclick="musicQuick('classical focus')">classical</span>
-          <span class="music-chip" onclick="musicQuick('trap music mix')">trap</span>
-          <span class="music-chip" onclick="musicQuick('jazz chill')">jazz</span>
+        <div class="row" style="gap:7px">
+          <input type="text" id="music-inp" placeholder="Search YouTube — songs, videos, channels…" onkeydown="if(event.key==='Enter'){hasPrevPage=false;_musicLastStat='';musicSearch()}" style="flex:1">
+          <button class="btn btn-p" style="flex-shrink:0;padding:9px 14px" onclick="hasPrevPage=false;_musicLastStat='';musicSearch()">🔍</button>
+        </div>
+        <!-- Quick chips — music + video categories -->
+        <div style="margin-top:10px">
+          <div style="font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:5px">🎵 MUSIC</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+            <span class="music-chip" onclick="musicQuick('lo-fi hip hop')">lo-fi</span>
+            <span class="music-chip" onclick="musicQuick('phonk mix')">phonk</span>
+            <span class="music-chip" onclick="musicQuick('study beats')">study</span>
+            <span class="music-chip" onclick="musicQuick('city pop playlist')">city pop</span>
+            <span class="music-chip" onclick="musicQuick('drill rap')">drill</span>
+            <span class="music-chip" onclick="musicQuick('trap music mix')">trap</span>
+            <span class="music-chip" onclick="musicQuick('jazz chill')">jazz</span>
+            <span class="music-chip" onclick="musicQuick('classical focus music')">classical</span>
+            <span class="music-chip" onclick="musicQuick('r&b mix')">r&b</span>
+            <span class="music-chip" onclick="musicQuick('rap playlist 2024')">rap</span>
+          </div>
+          <div style="font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:5px">📺 VIDEO</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <span class="music-chip" onclick="musicQuick('funny videos compilation')">funny</span>
+            <span class="music-chip" onclick="musicQuick('trending youtube shorts')">shorts</span>
+            <span class="music-chip" onclick="musicQuick('documentary full')">documentary</span>
+            <span class="music-chip" onclick="musicQuick('gaming highlights')">gaming</span>
+            <span class="music-chip" onclick="musicQuick('podcast full episode')">podcast</span>
+            <span class="music-chip" onclick="musicQuick('asmr')">asmr</span>
+          </div>
         </div>
       </div>
-      <div id="music-stat" style="font-size:10.5px;color:var(--muted);margin:4px 0 6px"></div>
-      <div id="music-page-row" style="display:none;align-items:center;justify-content:center;gap:12px;margin:8px 0;flex-wrap:wrap"></div>
+      <div id="music-stat" style="font-size:10.5px;color:var(--muted);margin:6px 0 4px"></div>
+      <div id="music-page-row" style="display:none;align-items:center;justify-content:center;gap:12px;margin:6px 0;flex-wrap:wrap"></div>
       <div id="music-results"></div>
     </div>
 
     <!-- Local Files section -->
     <div id="music-local-section" style="display:none">
       <div class="card">
-        <div class="lbl">MUSIC FOLDER</div>
+        <div class="rsb" style="margin-bottom:6px">
+          <span class="lbl" style="margin:0">LOCAL FILES</span>
+          <span style="font-size:9px;color:var(--muted)">audio · video · images · docs</span>
+        </div>
         <div class="row" style="gap:7px;margin-bottom:8px">
-          <input type="text" id="local-dir-inp" placeholder="e.g. C:\Users\You\Music" style="flex:1;font-family:Consolas,monospace;font-size:11px" onkeydown="if(event.key==='Enter')localBrowse()">
+          <input type="text" id="local-dir-inp" placeholder="Paste a folder path e.g. C:\Users\You\Music" style="flex:1;font-family:Consolas,monospace;font-size:11px" onkeydown="if(event.key==='Enter')localBrowse()">
           <button class="btn btn-p" style="flex-shrink:0;padding:9px 14px" onclick="localBrowse()">Scan</button>
         </div>
+        <div style="font-size:9.5px;color:var(--muted);margin-bottom:6px">Scans the folder for MP3, MP4, MKV, PNG, PDF, DOCX and more — click any file to open it.</div>
         <div id="local-roots" style="display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
       <div id="local-stat" style="font-size:10.5px;color:var(--muted);margin:4px 0 6px"></div>
-      <div id="local-search-wrap" style="display:none;margin-bottom:8px">
-        <input type="text" id="local-search" placeholder="Filter songs…" oninput="localFilter(this.value)">
+      <div id="local-search-wrap" style="display:none;margin-bottom:8px;display:none">
+        <div style="display:flex;gap:6px">
+          <input type="text" id="local-search" placeholder="Search…" oninput="localFilter(this.value)" style="flex:1">
+          <button class="btn btn-s" style="font-size:10px;padding:7px 11px;white-space:nowrap;flex-shrink:0" onclick="openFileTypeMenu()">🗂 Show Specific Types</button>
+        </div>
+        <div id="local-active-types" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+      </div>
+      <!-- Sort & Group toolbar — shown after scan -->
+      <div id="local-sort-bar" style="display:none;margin-bottom:8px">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em">SORT</span>
+          <button class="local-sort-btn on" data-sort="name-asc" onclick="setLocalSort('name-asc')">A→Z</button>
+          <button class="local-sort-btn" data-sort="name-desc" onclick="setLocalSort('name-desc')">Z→A</button>
+          <button class="local-sort-btn" data-sort="newest" onclick="setLocalSort('newest')">Newest</button>
+          <button class="local-sort-btn" data-sort="oldest" onclick="setLocalSort('oldest')">Oldest</button>
+          <button class="local-sort-btn" data-sort="size-desc" onclick="setLocalSort('size-desc')">Largest</button>
+          <button class="local-sort-btn" data-sort="size-asc" onclick="setLocalSort('size-asc')">Smallest</button>
+          <button class="local-sort-btn" data-sort="ext" onclick="setLocalSort('ext')">By Type</button>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:5px">
+          <span style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.05em">GROUP</span>
+          <button class="local-sort-btn" data-group="none" onclick="setLocalGroup('none')">None</button>
+          <button class="local-sort-btn" data-group="kind" onclick="setLocalGroup('kind')">By Type</button>
+          <button class="local-sort-btn" data-group="ext" onclick="setLocalGroup('ext')">By Format</button>
+          <button class="local-sort-btn" data-group="size" onclick="setLocalGroup('size')">By Size</button>
+          <button class="local-sort-btn" data-group="date" onclick="setLocalGroup('date')">By Date</button>
+        </div>
       </div>
       <div id="local-results"></div>
     </div>
 
-    <!-- Shared player — YouTube embed or HTML audio -->
-    <div id="music-player-wrap" style="margin-top:10px;display:none">
-      <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">
-        <div style="padding:9px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px" id="music-player-ico">▶</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:11.5px;font-weight:700;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis" id="music-now-title">Nothing playing</div>
-            <div style="font-size:9.5px;color:var(--muted)" id="music-now-src"></div>
-          </div>
-          <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="stopMusic()">✕ Stop</button>
-        </div>
-        <!-- YouTube iframe -->
-        <div id="music-yt-player" style="display:none;position:relative;padding-bottom:56.25%;height:0">
-          <iframe id="music-iframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen allow="autoplay;encrypted-media"></iframe>
-          <div id="music-embed-notice" style="display:none;position:absolute;bottom:8px;left:0;right:0;text-align:center;pointer-events:none">
-            <span style="background:rgba(0,0,0,.75);color:#aaa;font-size:10px;padding:4px 10px;border-radius:20px">⚠ This video can't embed — try another. Most videos work fine.</span>
-          </div>
-        </div>
-        <!-- Local audio player -->
-        <div id="music-local-player" style="display:none;padding:12px">
-          <audio id="music-audio" controls style="width:100%;border-radius:var(--rs);background:var(--surface);height:38px" preload="auto"></audio>
-        </div>
-      </div>
-    </div>
   </div>
 </div><!-- /panels -->
 
@@ -687,8 +853,8 @@ let phase = "idle";
 let cdLeft = 5, cdTick = null;
 let qaMode = "new";
 let qaHist = [];
-let winsScan=[], winsMath=[];
-let hwndScan=null, hwndMath=null;
+let winsScan=[], winsMath=[], winsQa=[];
+let hwndScan=null, hwndMath=null, hwndQa=null;
 const _attachedImages = { scan: [], qa: [], math: [] };
 let voicePoll = false;
 let curSTab = "typing";
@@ -883,20 +1049,21 @@ function setStat(msg, kind) {
 //  WINDOWS
 // ══════════════════════════════════════════════════════
 async function loadWins(tab) {
-  const menuId = tab==="scan"?"win-scan-csel-menu":"win-math-csel-menu";
-  const valId  = tab==="scan"?"win-scan-csel-val":"win-math-csel-val";
-  const cselId = tab==="scan"?"win-scan-csel":"win-math-csel";
-  // Remember previously selected hwnd so we can re-select after refresh
-  const prevHwnd = tab==="scan" ? (hwndScan ? String(hwndScan) : null) : (hwndMath ? String(hwndMath) : null);
+  const menuId = tab==="scan"?"win-scan-csel-menu":tab==="qa"?"win-qa-csel-menu":"win-math-csel-menu";
+  const valId  = tab==="scan"?"win-scan-csel-val":tab==="qa"?"win-qa-csel-val":"win-math-csel-val";
+  const cselId = tab==="scan"?"win-scan-csel":tab==="qa"?"win-qa-csel":"win-math-csel";
+  const prevHwnd = tab==="scan"?(hwndScan?String(hwndScan):null):tab==="qa"?(hwndQa?String(hwndQa):null):(hwndMath?String(hwndMath):null);
   cselSetText(valId, "Loading windows…");
-  // FIX: use the timeout-enhanced get() function (defined below)
   const d = await get("/api/windows").catch(e=>({windows:[], error:e.message}));
   const wins=d.windows||[];
-  if(tab==="scan"){ winsScan=wins; hwndScan=null; } else { winsMath=wins; hwndMath=null; }
-  const btnId = tab==="scan"?"scan-btn":"math-btn";
-  const rbtnId = tab==="scan"?"region-scan-btn":null;
-  q("#"+btnId).disabled=true;
-  if(rbtnId) q("#"+rbtnId).disabled=true;
+  if(tab==="scan"){ winsScan=wins; hwndScan=null; }
+  else if(tab==="qa"){ winsQa=wins; hwndQa=null; }
+  else { winsMath=wins; hwndMath=null; }
+  const btnId = tab==="scan"?"scan-btn":tab==="qa"?null:"math-btn";
+  const rbtnId = tab==="scan"?"region-scan-btn":tab==="qa"?"region-qa-btn":"region-math-btn";
+  if(btnId) q("#"+btnId).disabled=true;
+  const rbtnEl = q("#"+rbtnId);
+  if(rbtnEl) rbtnEl.disabled=true;
 
   if(!wins.length){
     const msg = d.error ? "⚠ Error: "+d.error : "No windows found — try Refresh";
@@ -905,31 +1072,30 @@ async function loadWins(tab) {
     return;
   }
 
-  // Build groups
   const apps     = wins.filter(w=>!w.is_browser);
   const browsers = wins.filter(w=> w.is_browser);
   const groups = [];
   if(apps.length)     groups.push({label:"📄 Apps & Documents", items: apps.map(w=>({value:String(w.hwnd), label:w.title.length>60?w.title.substring(0,60)+"…":w.title}))});
   if(browsers.length) groups.push({label:"🌐 Browser Tabs",     items: browsers.map(w=>({value:String(w.hwnd), label:w.title.length>60?w.title.substring(0,60)+"…":w.title}))});
 
-  // Determine initial selection
   const allItems = [...apps, ...browsers];
   let initVal = allItems.length ? String(allItems[0].hwnd) : null;
   if(prevHwnd && allItems.some(w=>String(w.hwnd)===prevHwnd)) initVal = prevHwnd;
 
   cselBuild(cselId, groups, initVal, (val)=>{
-    // val is hwnd string
     const hwndVal = parseInt(val);
-    const allWins = tab==="scan"?winsScan:winsMath;
+    const allWins = tab==="scan"?winsScan:tab==="qa"?winsQa:winsMath;
     const w = allWins.find(x=>x.hwnd===hwndVal);
-    const typeId=tab==="scan"?"wtype-scan":"wtype-math";
-    if(!w){ q("#"+btnId).disabled=true; return; }
-    if(tab==="scan") hwndScan=w.hwnd; else hwndMath=w.hwnd;
+    const typeId = tab==="scan"?"wtype-scan":tab==="qa"?"wtype-qa":"wtype-math";
+    if(!w){ if(btnId) q("#"+btnId).disabled=true; return; }
+    if(tab==="scan") hwndScan=w.hwnd;
+    else if(tab==="qa") hwndQa=w.hwnd;
+    else hwndMath=w.hwnd;
     const td=q("#"+typeId);
-    td.style.color=w.is_browser?"var(--green)":"var(--accent2)";
-    td.textContent=w.is_browser?"🌐 Browser — active tab":"🖥 App window";
-    q("#"+btnId).disabled=false;
-    if(tab==="scan") q("#region-scan-btn").disabled=false;
+    if(td){ td.style.color=w.is_browser?"var(--green)":"var(--accent2)"; td.textContent=w.is_browser?"🌐 Browser — active tab":"🖥 App window"; }
+    if(btnId) q("#"+btnId).disabled=false;
+    const rb=q("#"+rbtnId); if(rb) rb.disabled=false;
+    if(tab==="scan"||tab==="math") _updateShotBtn(tab);
   });
 
   if(initVal) cselSelect(cselId, initVal);
@@ -940,36 +1106,113 @@ function pickWin(tab) { /* handled by csel callback in loadWins */ }
 // ══════════════════════════════════════════════════════
 //  SCANNER
 // ══════════════════════════════════════════════════════
-async function doShot(mode, region) {
-  const isM = mode==="math";
-  const btnId=isM?"math-btn":"scan-btn";
-  const statId=isM?"math-stat":"scan-stat";
-  const progId=isM?"math-prog":"scan-prog";
-  const pbarId=isM?"math-pbar":"scan-pbar";
-  const hwnd=isM?hwndMath:hwndScan;
-  const tabKey = isM ? "math" : "scan";
-  q("#"+btnId).disabled=true; q("#"+btnId).textContent="⏳ Scanning…";
-  q("#"+progId).style.display="block";
-  q("#"+statId).innerHTML='<span class="loading">📸 Taking screenshot & analyzing…</span>';
-  animProg(pbarId,0,35,700);
-  const ctxBoxes = getContextBoxes(isM?"math":"scan");
-  const extraImgs = [...(_attachedImages[tabKey]||[])];
-  const ytCtx = ytGetContext(isM ? "math" : "scan");
-  const allCtx = ytCtx ? [...ctxBoxes, ytCtx] : ctxBoxes;
-  const body = { hwnd, mode, extra_context: allCtx, extra_images: extraImgs };
-  if (region) body.region = region;
-  const d = await post("/api/screenshot", body).catch(e=>({error:e.toString()}));
-  animProg(pbarId,35,100,500);
-  setTimeout(()=>{ q("#"+progId).style.display="none"; },700);
-  if(d.error){
-    q("#"+statId).textContent="⚠ "+d.error;
-    q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Screenshot & Solve":"📸 Screenshot & Scan"; return;
+
+// Update scan/math button label based on what's selected
+function _updateShotBtn(tab) {
+  const isM = tab === "math";
+  const btnId = isM ? "math-btn" : "scan-btn";
+  const btn = q("#" + btnId);
+  if (!btn) return;
+  const hwnd = isM ? hwndMath : hwndScan;
+  const files = (_attachedImages[tab] || []).filter(x => (typeof x === "object" ? x.b64 : x));
+  const hasWin = !!hwnd;
+  const hasFiles = files.length > 0;
+  if (hasWin && hasFiles) {
+    btn.textContent = isM ? "📸 Screenshot & Solve + Files" : "📸 Screenshot & Scan + Files";
+    btn.disabled = false;
+  } else if (hasWin) {
+    btn.textContent = isM ? "📸 Screenshot & Solve" : "📸 Screenshot & Scan";
+    btn.disabled = false;
+  } else if (hasFiles) {
+    btn.textContent = isM ? "📄 Solve Files" : "📄 Scan Files";
+    btn.disabled = false;
+  } else {
+    btn.textContent = isM ? "📸 Screenshot & Solve" : "📸 Screenshot & Scan";
+    btn.disabled = true;
   }
-  if(isM) renderMath(d.result);
-  else { renderScan(d.result); clearContextBoxes("scan"); }
-  // Clear attached images after scan
-  _attachedImages[tabKey] = []; renderImageChips(tabKey);
-  q("#"+btnId).disabled=false; q("#"+btnId).textContent=isM?"📸 Solve Again":"📸 Scan Again";
+}
+
+async function doShot(mode, region) {
+  const isM = mode === "math";
+  const btnId  = isM ? "math-btn"  : "scan-btn";
+  const statId = isM ? "math-stat" : "scan-stat";
+  const progId = isM ? "math-prog" : "scan-prog";
+  const pbarId = isM ? "math-pbar" : "scan-pbar";
+  const hwnd   = isM ? hwndMath : hwndScan;
+  const tabKey = isM ? "math" : "scan";
+
+  const attachedRaw = _attachedImages[tabKey] || [];
+  const attachedFiles = attachedRaw.filter(x => typeof x === "object" && x !== null && x.b64);
+  const hasWin   = !!hwnd;
+  const hasFiles = attachedFiles.length > 0;
+
+  const btn = q("#" + btnId);
+  btn.disabled = true;
+  btn.textContent = "⏳ Working…";
+  q("#" + progId).style.display = "block";
+  q("#" + statId).innerHTML = '<span class="loading">📸 Analyzing…</span>';
+  animProg(pbarId, 0, hasWin && hasFiles ? 20 : 35, 600);
+
+  const ctxBoxes = getContextBoxes(tabKey);
+  const ytCtx = ytGetContext(tabKey);
+  const allCtx = ytCtx ? [...ctxBoxes, ytCtx] : ctxBoxes;
+  const strictness = S.scanner_wrong_answer_strictness || "flag_all";
+
+  let windowResult = null;
+  let fileResults  = [];
+  let anyError     = null;
+
+  // ── Step 1: Screenshot the window if one is selected ──
+  if (hasWin) {
+    q("#" + statId).innerHTML = '<span class="loading">📸 Taking screenshot…</span>';
+    const extraImgs = attachedRaw.map(x => typeof x === "string" ? x : null).filter(Boolean);
+    const body = { hwnd, mode, extra_context: allCtx, extra_images: extraImgs };
+    if (region) body.region = region;
+    const d = await post("/api/screenshot", body, 120000).catch(e => ({ error: e.toString() }));
+    if (d.error) { anyError = d.error; }
+    else { windowResult = d.result; }
+    animProg(pbarId, 20, hasFiles ? 50 : 100, 400);
+  }
+
+  // ── Step 2: Scan each attached file ──
+  if (hasFiles && !anyError) {
+    q("#" + statId).innerHTML = `<span class="loading">📄 Reading ${attachedFiles.length} attached file${attachedFiles.length > 1 ? "s" : ""}…</span>`;
+    const filePayload = attachedFiles.map(f => ({ b64: f.b64, name: f.name || "", kind: f.kind || "image" }));
+    const d = await post("/api/scan_files", { mode, extra_context: allCtx, attached_files: filePayload, strictness }, 120000).catch(e => ({ error: e.toString() }));
+    if (d.error) { anyError = d.error; }
+    else {
+      fileResults = isM ? (d.result?.problems || []) : (d.result?.questions || []);
+    }
+    animProg(pbarId, 50, 100, 400);
+  } else if (!hasWin) {
+    animProg(pbarId, 0, 100, 400);
+  }
+
+  setTimeout(() => { q("#" + progId).style.display = "none"; }, 700);
+
+  if (anyError) {
+    q("#" + statId).textContent = "⚠ " + anyError;
+    btn.disabled = false;
+    _updateShotBtn(tabKey);
+    return;
+  }
+
+  // ── Merge and render ──
+  if (isM) {
+    const winProblems = windowResult?.problems || [];
+    const merged = { problems: [...winProblems, ...fileResults] };
+    renderMath(merged);
+    clearContextBoxes("math");
+  } else {
+    const winQs = windowResult?.questions || [];
+    const merged = { questions: [...winQs, ...fileResults] };
+    renderScan(merged);
+    clearContextBoxes("scan");
+  }
+
+  _attachedImages[tabKey] = [];
+  renderImageChips(tabKey);
+  _updateShotBtn(tabKey);
 }
 
 function animProg(id,from,to,dur) {
@@ -983,13 +1226,26 @@ function renderScan(result) {
   cont.innerHTML="";
   if(result.error){stat.textContent="⚠ "+result.error;return;}
   const qs=result.questions||[];
-  if(!qs.length){stat.textContent="No questions found on this page."; banner.style.display="none"; return;}
+  if(!qs.length){stat.textContent="No questions found."; banner.style.display="none"; return;}
   const answered=qs.filter(q=>q.answered).length;
   const wrong=qs.filter(q=>q.is_correct===false).length;
   const unanswered=qs.filter(q=>!q.answered).length;
   stat.textContent=`✓ Found ${qs.length} question(s) — ${unanswered} unanswered, ${answered-wrong} correct, ${wrong} wrong`;
   let hasUncertain=false;
-  qs.forEach((qa,i)=>{ if(qa.confident===false) hasUncertain=true; renderScanCard(qa,i,cont); });
+  let lastSource=null;
+  qs.forEach((qa,i)=>{
+    if(qa.confident===false) hasUncertain=true;
+    // Show a source divider when switching from screenshot results to file results
+    const src = qa._source || null;
+    if(src && src !== lastSource) {
+      const div = document.createElement("div");
+      div.style.cssText="display:flex;align-items:center;gap:8px;margin:10px 0 7px;font-size:9.5px;font-weight:700;color:var(--accent2);letter-spacing:.04em";
+      div.innerHTML=`<span style="flex:1;height:1px;background:var(--border2)"></span>📄 ${esc(src)}<span style="flex:1;height:1px;background:var(--border2)"></span>`;
+      cont.appendChild(div);
+      lastSource=src;
+    }
+    renderScanCard(qa,i,cont);
+  });
   banner.style.display=hasUncertain?"flex":"none";
 }
 
@@ -1148,7 +1404,7 @@ async function humanize(srcId, outId, barId, action) {
   spinner.textContent = labels[action] || "Working…";
   outEl.prepend(spinner);
 
-  const r = await post("/api/humanize", {text, action}).catch(e=>({error:e.toString()}));
+  const r = await post("/api/humanize", {text, action}, 60000).catch(e=>({error:e.toString()}));
   spinner.remove();
   if (r.error) { outEl.textContent = "⚠ " + r.error; return; }
 
@@ -1174,23 +1430,32 @@ function renderMath(result) {
   cont.innerHTML="";
   if(result.error){stat.textContent="⚠ "+result.error;return;}
   const ps=result.problems||[];
-  if(!ps.length){stat.textContent="No math problems found. Try a clearer screenshot.";return;}
+  if(!ps.length){stat.textContent="No math problems found. Try a clearer screenshot or attach a file.";return;}
   stat.textContent=`✓ Found ${ps.length} problem(s) — expand each to see full solution.`;
 
-  // Formula library note
   const libNote=document.createElement("div");
   libNote.className="formula-lib-note";
   libNote.innerHTML=`📚 <span>These solutions are being saved to your <b>Formula Library</b> automatically for future reference.</span>`;
   cont.appendChild(libNote);
 
-  ps.forEach((p,i)=>renderMathCard(p,i,cont));
+  let lastSource=null;
+  ps.forEach((p,i)=>{
+    const src = p._source || null;
+    if(src && src !== lastSource) {
+      const div = document.createElement("div");
+      div.style.cssText="display:flex;align-items:center;gap:8px;margin:10px 0 7px;font-size:9.5px;font-weight:700;color:var(--accent2);letter-spacing:.04em";
+      div.innerHTML=`<span style="flex:1;height:1px;background:var(--border2)"></span>📄 ${esc(src)}<span style="flex:1;height:1px;background:var(--border2)"></span>`;
+      cont.appendChild(div);
+      lastSource=src;
+    }
+    renderMathCard(p,i,cont);
+  });
 }
 
 function renderMathCard(p, i, cont) {
   const label = p.problem_label || `#${i+1}`;
-  const card=document.createElement("div");
+  const card = document.createElement("div");
 
-  // Card border color — match scanner style
   let cardClass = "math-card";
   let statusBadge = "";
   if (p.answered && p.is_correct===false) {
@@ -1200,78 +1465,98 @@ function renderMathCard(p, i, cont) {
   } else if (p.answered) {
     statusBadge='<span class="badge badge-tf">✓ Answered</span>';
   }
-  card.className=cardClass;
+  card.className = cardClass;
 
-  // Build steps HTML
-  const stepsHtml=(p.steps||[]).map((s,si)=>`
+  const pt = (p.problem_type || "").toUpperCase();
+  const typeLabel = p.problem_type ? p.problem_type.replace(/_/g," ") : "";
+  const method = p.solving_method || "";
+
+  // ── Explanation tab: steps + explanations ──
+  const stepsHtml = (p.steps||[]).map((s, si) => `
     <div class="step">
       <div class="step-n">${si+1}</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="step-txt">${esc(s)}</div>
-        ${(p.explanations||[])[si]?`<div class="step-exp">💡 ${esc(p.explanations[si])}</div>`:""}
+        ${(p.explanations||[])[si] ? `<div class="step-exp">💡 ${esc(p.explanations[si])}</div>` : ""}
       </div>
     </div>`).join("");
 
-  const pt = (p.problem_type || "").toUpperCase();
-  const vertNotApplicableMsg = pt === "FILL_BLANK" ? "Fill-in-the-blank — answer is the value(s) for the blank(s)." :
-    pt === "MULTIPLE_CHOICE" ? "Multiple choice — select the correct option(s)." :
-    pt === "GEOMETRY" ? "Geometry/diagram — see Diagram tab and explanation." : "Vertical column layout not applicable for this problem.";
-  const vertHtml = p.vertical_method
-    ? `<div class="math-content" id="mc-vert-${i}">
-        <div style="font-size:9px;font-weight:700;color:var(--accent2);margin-bottom:8px;letter-spacing:.05em">VERTICAL / COLUMN METHOD</div>
-        <div class="vertical-method">${esc(p.vertical_method)}</div>
-      </div>`
-    : `<div class="math-content" id="mc-vert-${i}">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;font-style:italic">${esc(vertNotApplicableMsg)}</div>
-      </div>`;
+  // ── Method tab: horizontal chain + vertical column ──
+  const horizHtml = (p.horizontal_steps && p.horizontal_steps.length)
+    ? `<div class="method-section-lbl">↔ HORIZONTAL — left to right</div>
+       <div class="horiz-chain">
+         ${p.horizontal_steps.map((hs, hi) => {
+           const parts = hs.split(/\s*→\s*/);
+           return parts.map((part, pi) =>
+             `<div class="horiz-step">
+                <div class="horiz-step-box" onclick="copyInline(this,'${part.trim().replace(/'/g,"\\'")}')">
+                  ${esc(part.trim())}
+                </div>
+                ${pi < parts.length-1 ? '<div class="horiz-arrow">→</div>' : ""}
+              </div>`
+           ).join("") + (hi < p.horizontal_steps.length-1 ? '<div style="width:100%;height:6px"></div>' : "");
+         }).join("")}
+       </div>`
+    : "";
 
-  // Graph HTML
+  const vertHtml = p.vertical_method
+    ? `<div class="method-divider"></div>
+       <div class="method-section-lbl">↕ VERTICAL — column layout</div>
+       <div class="vertical-method">
+         ${p.vertical_method.split("\n").map(row =>
+           `<div class="vert-row" onclick="copyInline(this,'${row.replace(/'/g,"\\'")}')">${esc(row) || "&nbsp;"}<span class="copy-hint">click to copy</span></div>`
+         ).join("")}
+       </div>`
+    : `<div class="method-divider"></div>
+       <div style="text-align:center;padding:16px;color:var(--muted);font-size:11px;font-style:italic">
+         ${pt==="FILL_BLANK"?"Fill-in-the-blank — no column layout needed.":
+           pt==="MULTIPLE_CHOICE"?"Multiple choice — select the correct option.":
+           pt==="GEOMETRY"?"Geometry problem — see the Graph/Diagram tab for the visual.":
+           "No column layout for this problem type."}
+       </div>`;
+
+  const methodTabHtml = `<div class="math-content" id="mc-vert-${i}">${horizHtml}${vertHtml}</div>`;
+
+  // ── Graph/Diagram tab ──
   const graphHtml = p.graph_b64
     ? `<div class="math-content" id="mc-graph-${i}">
-        <div style="font-size:9px;font-weight:700;color:var(--accent2);margin-bottom:8px;letter-spacing:.05em">📈 GRAPH</div>
-        <div class="math-graph"><img src="data:image/png;base64,${p.graph_b64}" alt="graph" loading="lazy"></div>
-      </div>`
+         <div class="method-section-lbl">📈 GRAPH</div>
+         <div class="math-graph"><img src="data:image/png;base64,${p.graph_b64}" alt="graph" loading="lazy"></div>
+       </div>`
     : p.diagram_description
     ? `<div class="math-content" id="mc-graph-${i}">
-        <div style="font-size:9px;font-weight:700;color:var(--accent2);margin-bottom:8px;letter-spacing:.05em">🔺 DIAGRAM</div>
-        <div style="background:var(--card);border-radius:var(--rs);padding:12px;font-size:11.5px;color:var(--text2);line-height:1.7;border-left:3px solid var(--accent2)">
-          ${esc(p.diagram_description)}
-        </div>
-        <div style="font-size:9.5px;color:var(--muted);margin-top:8px;font-style:italic">Geometry/diagram problem — no function graph applies.</div>
-      </div>`
+         <div class="method-section-lbl">🔺 DIAGRAM</div>
+         <div style="background:var(--card);border-radius:var(--rs);padding:12px;font-size:11.5px;color:var(--text2);line-height:1.75;border-left:3px solid var(--accent2)">${esc(p.diagram_description)}</div>
+       </div>`
     : `<div class="math-content" id="mc-graph-${i}">
-        <div class="math-no-graph">No graph available for this problem type.</div>
-      </div>`;
+         <div class="math-no-graph">No graph available for this problem type.</div>
+       </div>`;
 
-  const typeLabel = p.problem_type ? p.problem_type.replace(/_/g," ") : "";
-  card.innerHTML=`
+  card.innerHTML = `
     <div class="math-card-head" onclick="toggleMathCard(${i})">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <div class="math-card-title">📐 Problem ${label}</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0">
+        <div class="math-card-title">📐 Problem ${esc(label)}</div>
         ${typeLabel ? `<span style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">${esc(typeLabel)}</span>` : ""}
+        ${method ? `<span class="method-pill">⚙ ${esc(method)}</span>` : ""}
         ${statusBadge}
-        ${p.confident===false?'<span class="badge badge-warn">⚠ Uncertain</span>':""}
+        ${p.confident===false ? '<span class="badge badge-warn">⚠ Uncertain</span>' : ""}
+        <div style="margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0" id="mc-arrow-${i}">▼ Expand</div>
       </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">${esc((p.problem||"").substring(0,55))}${(p.problem||"").length>55?"…":""}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap">
-        <div class="math-display" style="flex:1;min-width:0">${esc(p.answer||"")}</div>
-        <div style="font-size:11px;color:var(--muted);flex-shrink:0" id="mc-arrow-${i}">▼</div>
-      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;word-break:break-word">${esc((p.problem||"").substring(0,80))}${(p.problem||"").length>80?"…":""}</div>
+      <div class="math-display" style="margin-top:6px;width:100%;box-sizing:border-box">${esc(p.answer||"")}</div>
     </div>
-    ${p.answered && p.user_answer ? `<div style="padding:7px 14px;font-size:10.5px;color:var(--muted);background:var(--card2);border-top:1px solid var(--border)">Their answer: <span style="color:${p.is_correct===false?'var(--red)':"var(--text2)"};font-weight:600">${esc(p.user_answer)}</span></div>` : ""}
+    ${p.answered && p.user_answer ? `<div style="padding:7px 14px;font-size:10.5px;color:var(--muted);background:var(--card2);border-top:1px solid var(--border)">Their answer: <span style="color:${p.is_correct===false?"var(--red)":"var(--text2)"};font-weight:600">${esc(p.user_answer)}</span></div>` : ""}
     <div class="math-body" id="mc-body-${i}" style="display:none">
       <div class="math-tabs">
-        <button class="math-tab on" data-mi="${i}" data-mt="explain" onclick="switchMathTab(${i},'explain')">📖 Explanation</button>
+        <button class="math-tab on" data-mi="${i}" data-mt="explain" onclick="switchMathTab(${i},'explain')">📖 Steps</button>
         <button class="math-tab" data-mi="${i}" data-mt="vert" onclick="switchMathTab(${i},'vert')">📊 Method</button>
         <button class="math-tab" data-mi="${i}" data-mt="graph" onclick="switchMathTab(${i},'graph')">📈 Graph</button>
       </div>
       <div id="mc-explain-${i}" class="math-content">
-        <div style="font-size:9px;font-weight:700;color:var(--accent2);margin-bottom:8px;letter-spacing:.05em">STEP-BY-STEP EXPLANATION</div>
-        ${stepsHtml||'<div style="color:var(--muted);font-size:11px">No steps available.</div>'}
+        <div class="method-section-lbl">📖 STEP-BY-STEP</div>
+        ${stepsHtml || '<div style="color:var(--muted);font-size:11px">No steps available.</div>'}
       </div>
-      ${vertHtml}
+      ${methodTabHtml}
       ${graphHtml}
       <div class="math-ans-bar">
         <span style="flex-shrink:0">✓ Answer</span>
@@ -1280,11 +1565,10 @@ function renderMathCard(p, i, cont) {
       </div>
     </div>`;
 
-  // Correction box for wrong math answers
   if (p.is_correct===false && p.correction) {
-    const cb=document.createElement("div");
-    cb.className="correction-box";
-    cb.innerHTML=`
+    const cb = document.createElement("div");
+    cb.className = "correction-box";
+    cb.innerHTML = `
       <div class="cb-head">⚠ CORRECTION NEEDED</div>
       <div class="cb-row"><span class="cb-label">❌ Wrong:</span><span class="cb-val-wrong">${esc(p.user_answer||"")}</span></div>
       <div class="cb-row"><span class="cb-label">✓ Right:</span><span class="cb-val-right">${esc(p.correction)}</span></div>
@@ -1293,26 +1577,25 @@ function renderMathCard(p, i, cont) {
   }
 
   cont.appendChild(card);
-  const vEl=card.querySelector(`#mc-vert-${i}`);
-  const gEl=card.querySelector(`#mc-graph-${i}`);
-  if(vEl) vEl.style.display="none";
-  if(gEl) gEl.style.display="none";
+  // hide method + graph tabs by default — explain is shown
+  const vEl = card.querySelector(`#mc-vert-${i}`);
+  const gEl = card.querySelector(`#mc-graph-${i}`);
+  if (vEl) vEl.style.display = "none";
+  if (gEl) gEl.style.display = "none";
 }
 
 function toggleMathCard(i) {
-  const body=q(`#mc-body-${i}`); const arrow=q(`#mc-arrow-${i}`);
-  const isOpen=body.style.display!=="none";
-  body.style.display=isOpen?"none":"block";
-  arrow.textContent=isOpen?"▼ Expand":"▲ Collapse";
+  const body = q(`#mc-body-${i}`); const arrow = q(`#mc-arrow-${i}`);
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+  if (arrow) arrow.textContent = isOpen ? "▼ Expand" : "▲ Collapse";
 }
 
 function switchMathTab(i, tab) {
-  // Update tab buttons
-  document.querySelectorAll(`.math-tab[data-mi="${i}"]`).forEach(b=>{
-    b.classList.toggle("on", b.dataset.mt===tab);
+  document.querySelectorAll(`.math-tab[data-mi="${i}"]`).forEach(b => {
+    b.classList.toggle("on", b.dataset.mt === tab);
   });
-  // Show/hide content
-  const tabs=["explain","vert","graph"];
+  const tabs = ["explain","vert","graph"];
   tabs.forEach(t=>{
     const el=q(`#mc-${t}-${i}`);
     if(el) el.style.display=(t===tab)?"block":"none";
@@ -1342,10 +1625,11 @@ async function qaAsk() {
   stat.innerHTML='<span class="loading">'+(qaMode==="fu"?"Going deeper on topic…":"Asking AI…")+'</span>';
   q("#qa-empty").style.display="none";
   const qaCtx = getContextBoxes("qa");
-  const qaImgs = [...(_attachedImages.qa||[])];
+  const qaImgs = (_attachedImages.qa||[]).map(x => typeof x === "string" ? x : x.b64).filter(Boolean);
   const ytQaCtx = ytGetContext("qa");
-  const allQaCtx = ytQaCtx ? [...qaCtx, ytQaCtx] : qaCtx;
-  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu",extra_context:allQaCtx,extra_images:qaImgs}).catch(e=>({error:e.toString()}));
+  const docCtxBlock = _writeDocCtx ? `[DOCUMENT CONTEXT]:\n${_writeDocCtx}` : null;
+  const allQaCtx = [ytQaCtx, docCtxBlock, ...qaCtx].filter(Boolean);
+  const r=await post("/api/qa",{question,history:qaHist,followup:qaMode==="fu",extra_context:allQaCtx,extra_images:qaImgs},60000).catch(e=>({error:e.toString()}));
   clearContextBoxes("qa");
   _attachedImages.qa = []; renderImageChips("qa");
   btn.disabled=false; btn.textContent="⚡ Get Answer";
@@ -1382,6 +1666,140 @@ function clearQa() {
   qaHist=[];
   q("#qa-hist").innerHTML='<div class="empty" id="qa-empty">No answers yet.<br>Ask a question above!</div>';
   q("#qa-stat").textContent=""; setMode("new");
+}
+
+// ══════════════════════════════════════════════════════
+//  DOCUMENT CONTEXT MEMORY
+// ══════════════════════════════════════════════════════
+let _writeDocCtx = "";
+
+async function setWriteDocCtx() {
+  const text = q("#write-doc-inp").value.trim();
+  if (!text) return;
+  _writeDocCtx = text;
+  const r = await post("/api/doc_context", { action:"set", text }).catch(()=>({ok:false}));
+  const words = text.split(/\s+/).length;
+  const label = `Document loaded — ${words} words`;
+  q("#write-doc-ctx-label").textContent = label;
+  q("#write-doc-ctx-active").style.display = "flex";
+  q("#write-doc-inp").value = "";
+}
+
+function clearWriteDocCtx() {
+  _writeDocCtx = "";
+  post("/api/doc_context", { action:"clear" }).catch(()=>{});
+  q("#write-doc-ctx-active").style.display = "none";
+}
+
+// Also for Q&A tab doc context
+async function setQaDocCtx(text) {
+  _writeDocCtx = text;
+  const words = text.split(/\s+/).length;
+  const label = `Document context: ${words} words`;
+  const el = q("#qa-doc-ctx-label"); if(el) el.textContent = label;
+  const wrap = q("#qa-doc-ctx-active"); if(wrap) wrap.style.display = "flex";
+}
+
+function clearDocCtx() {
+  _writeDocCtx = "";
+  const wrap = q("#qa-doc-ctx-active"); if(wrap) wrap.style.display = "none";
+}
+
+// ══════════════════════════════════════════════════════
+//  WRITE TAB
+// ══════════════════════════════════════════════════════
+let _writeMode = "analyze";
+let _writeResult = "";
+
+const _writeModeConfig = {
+  analyze:      { extra: false },
+  rewrite:      { extra: true,  extraLbl: "TARGET STYLE", extraPh: "e.g. more formal, like a student, simpler…" },
+  outline:      { extra: true,  extraLbl: "ESSAY TYPE",   extraPh: "e.g. argumentative, compare & contrast, 5-paragraph…" },
+  prompt_decode:{ extra: false },
+  tone:         { extra: false },
+  argument:     { extra: false },
+  summary:      { extra: false },
+  citation:     { extra: true,  extraLbl: "CITATION STYLE", extraPh: "MLA, APA, or Chicago (default: all three)" },
+  vocab:        { extra: true,  extraLbl: "CONTEXT SENTENCE", extraPh: "Paste the sentence this word appears in…" },
+};
+
+function setWriteMode(mode) {
+  _writeMode = mode;
+  document.querySelectorAll(".write-mode-btn").forEach(b => b.classList.toggle("on", b.dataset.wm === mode));
+  const cfg = _writeModeConfig[mode] || {};
+  const wrap = q("#write-extra-wrap");
+  if (cfg.extra) {
+    wrap.style.display = "";
+    q("#write-extra-lbl").textContent = cfg.extraLbl || "EXTRA";
+    q("#write-extra-inp").placeholder = cfg.extraPh || "";
+  } else {
+    wrap.style.display = "none";
+  }
+  const placeholders = {
+    analyze: "Paste your essay or writing here…",
+    rewrite: "Paste the text you want rewritten…",
+    outline: "Paste your topic, thesis, or draft here…",
+    prompt_decode: "Paste the essay prompt or assignment instructions here…",
+    tone: "Paste the text to analyze for tone and style…",
+    argument: "Paste the argument or paragraph to check…",
+    summary: "Paste the text to summarize…",
+    citation: "Paste source info — title, author, URL, publisher, year…",
+    vocab: "Enter the word or phrase to look up…",
+  };
+  q("#write-inp").placeholder = placeholders[mode] || "Paste your text here…";
+}
+
+async function writeRun() {
+  const text = q("#write-inp").value.trim();
+  if (!text) { q("#write-stat").textContent = "⚠ Paste some text first."; return; }
+  const extra = (q("#write-extra-inp")?.value || "").trim();
+  const btn = q("#write-btn"); const stat = q("#write-stat");
+  btn.disabled = true; btn.innerHTML = '<span class="spin-ico">⟳</span> Working…';
+  stat.innerHTML = '<span class="loading">Analyzing…</span>';
+  q("#write-result-wrap").style.display = "none";
+
+  const r = await post("/api/write", {
+    mode: _writeMode, text, extra, doc_context: _writeDocCtx
+  }, 60000).catch(e => ({ error: e.toString() }));
+
+  btn.disabled = false; btn.textContent = "⚡ Run";
+  if (r.error) { stat.innerHTML = `<span style="color:var(--red)">⚠ ${esc(r.error)}</span>`; return; }
+
+  _writeResult = r.result;
+  stat.textContent = "✓ Done";
+  const el = q("#write-result-text");
+  // Render **BOLD** section headers
+  el.innerHTML = esc(r.result).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  q("#write-hout").style.display = "none";
+  q("#write-hout").innerHTML = "";
+  q("#write-result-wrap").style.display = "";
+}
+
+function writeAutoType() {
+  // Use humanized result if available, otherwise raw result
+  const hout = q("#write-hout");
+  const htextEl = hout ? hout.querySelector("div[data-htext]") : null;
+  const text = htextEl ? htextEl.dataset.htext : _writeResult;
+  if (text) atAnswer(enc(text));
+}
+
+function writeCopy() {
+  const hout = q("#write-hout");
+  const htextEl = hout ? hout.querySelector("div[data-htext]") : null;
+  const text = htextEl ? htextEl.dataset.htext : _writeResult;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = q("#write-result-wrap").querySelector("button[onclick='writeCopy()']");
+    if (btn) { btn.textContent = "✓ Copied!"; setTimeout(() => btn.textContent = "📋 Copy", 1500); }
+  }).catch(()=>{});
+}
+
+function clearWrite() {
+  q("#write-inp").value = "";
+  q("#write-stat").textContent = "";
+  q("#write-result-wrap").style.display = "none";
+  q("#write-hout").innerHTML = "";
+  q("#write-extra-inp") && (q("#write-extra-inp").value = "");
+  _writeResult = "";
 }
 
 // ══════════════════════════════════════════════════════
@@ -1807,6 +2225,15 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"
 const enc=s=>encodeURIComponent(s);
 const dec=s=>decodeURIComponent(s);
 
+function copyInline(el, text) {
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    el.classList.add("copied");
+    const prev = el.querySelector(".copy-hint");
+    if (prev) { const old = prev.textContent; prev.textContent = "✓ copied!"; setTimeout(()=>{ prev.textContent = "click to copy"; }, 1200); }
+    setTimeout(() => el.classList.remove("copied"), 1200);
+  }).catch(() => {});
+}
+
 // FIX: Enhanced get() with timeout and abort controller
 async function get(url, timeout = 5000) {
     const controller = new AbortController();
@@ -1822,23 +2249,33 @@ async function get(url, timeout = 5000) {
     }
 }
 
-async function post(url, data) {
-  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:data?JSON.stringify(data):undefined});
-  if (!r.ok) throw new Error("Server " + r.status + " on " + url);
-  return r.json();
+async function post(url, data, timeout=20000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:data?JSON.stringify(data):undefined, signal:ctrl.signal});
+    clearTimeout(tid);
+    if (!r.ok) throw new Error("Server " + r.status + " on " + url);
+    return r.json();
+  } catch(e) {
+    clearTimeout(tid);
+    throw e;
+  }
 }
 
 // ══════════════════════════════════════════════════════
 //  MUSIC PLAYER  — YouTube + Local Files
 // ══════════════════════════════════════════════════════
-let musicSrc = "yt";            // "yt" | "local"
+let musicSrc = "yt";
 let currentVideoId = null;
-let musicYTResults = [];        // current page of YouTube results
+let musicYTResults = [];
 let currentSearchPage = 1;
 let hasNextPage = false;
 let hasPrevPage = false;
-let localFiles = [];            // all scanned local files
-let localFilesFiltered = [];    // after search filter
+let _musicLastStat = "";
+let _musicLastQuery = "";
+let localFiles = [];
+let localFilesFiltered = [];
 
 function setMusicSrc(src) {
   musicSrc = src;
@@ -1855,85 +2292,237 @@ async function musicSearch(page) {
   if (!query) return;
   if (page == null) page = 1;
   const stat = q("#music-stat"); const res = q("#music-results"); const pageRow = q("#music-page-row");
-  stat.innerHTML = `<span class="loading">🔍 Searching for "${esc(query)}"…</span>`;
-  if (pageRow) pageRow.style.display = "none";
-  res.innerHTML = "";
 
-  const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}&page=${page}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
+  // Page flip — keep existing stat text, just swap results below
+  const isPageFlip = page > 1;
+  if (!isPageFlip) {
+    stat.innerHTML = `<span class="loading">🔍 Searching for "${esc(query)}"…</span>`;
+    // After 4s, show patience message if still loading
+    const patienceTimer = setTimeout(() => {
+      if (stat.querySelector(".loading")) {
+        stat.innerHTML = `<span class="loading">🔍 Fetching a lot of results — this may take a moment, hang tight…</span>`;
+      }
+    }, 4000);
+    if (pageRow) pageRow.style.display = "none";
+    res.innerHTML = "";
 
-  if (r.error || !r.results) {
-    musicYTResults = [];
-    stat.innerHTML = `<span style="color:var(--orange)">⚠ ${esc(r.error||"No results found.")} Try a different search.</span>`;
-    return;
+    const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}&page=${page}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
+    clearTimeout(patienceTimer);
+
+    if (r.error || !r.results) {
+      musicYTResults = [];
+      stat.innerHTML = `<span style="color:var(--orange)">⚠ ${esc(r.error||"No results found.")} Try a different search.</span>`;
+      return;
+    }
+
+    musicYTResults = r.results;
+    currentSearchPage = r.page != null ? r.page : 1;
+    hasNextPage = !!r.has_next;
+    hasPrevPage = !!r.has_prev;
+    stat.textContent = r.total_cached ? `${r.total_cached} results for "${query}"` : (r.results.length ? `${r.results.length} results for "${query}"` : `No results for "${query}"`);
+    _musicLastStat = stat.textContent;
+    _musicLastQuery = query;
+
+  } else {
+    // Page flip — restore stat, don't touch it during load
+    if (_musicLastStat) stat.textContent = _musicLastStat;
+    res.innerHTML = "";
+
+    const r = await fetch(`/api/music/search?q=${encodeURIComponent(query)}&page=${page}`).then(r=>r.json()).catch(e=>({error:e.toString(),results:[]}));
+
+    if (r.error || !r.results) {
+      stat.innerHTML = `<span style="color:var(--orange)">⚠ ${esc(r.error||"No results found.")}</span>`;
+      return;
+    }
+
+    musicYTResults = r.results;
+    currentSearchPage = r.page != null ? r.page : 1;
+    hasNextPage = !!r.has_next;
+    hasPrevPage = !!r.has_prev;
   }
 
-  musicYTResults = r.results;
-  currentSearchPage = r.page != null ? r.page : 1;
-  hasNextPage = !!r.has_next;
-  hasPrevPage = !!r.has_prev;
-  stat.textContent = r.results.length ? `${r.results.length} results for "${query}"` : `No more results for "${query}"`;
   if (pageRow) {
     pageRow.style.display = "flex";
     pageRow.innerHTML = `
-      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage - 1})" ${!hasPrevPage ? "disabled" : ""} title="Previous page">◀ Prev</button>
+      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage - 1})" ${!hasPrevPage ? "disabled" : ""}>◀ Prev</button>
       <span class="music-page-num">Page ${currentSearchPage}</span>
-      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage + 1})" ${!hasNextPage ? "disabled" : ""} title="Next page">Next ▶</button>`;
+      <button class="btn btn-ghost music-page-btn" onclick="musicSearch(${currentSearchPage + 1})" ${!hasNextPage ? "disabled" : ""}>Next ▶</button>`;
   }
   res.innerHTML = "";
-  r.results.forEach(v => {
+  musicYTResults.forEach(v => {
     const dur = v.duration ? fmtDur(v.duration) : "";
-    const el  = document.createElement("div");
+    const isLong = v.duration && v.duration > 600; // > 10 min = likely a video/podcast not a track
+    const el = document.createElement("div");
     el.className = "music-item" + (v.videoId===currentVideoId?" playing":"");
     el.dataset.vid = v.videoId;
     el.innerHTML = `
       <img class="music-thumb" src="${esc(v.thumb||"")}" loading="lazy" onerror="this.style.display='none'">
       <div style="flex:1;min-width:0">
         <div class="music-title">${esc(v.title||"Untitled")}</div>
-        <div class="music-ch">${esc(v.author||"")}${dur?" · "+dur:""}</div>
+        <div class="music-ch">${esc(v.author||"")}${dur?` · <span style="color:${isLong?"var(--orange)":"var(--muted)"}">${dur}</span>`:""}</div>
       </div>
       <span style="font-size:15px;color:var(--accent2);flex-shrink:0">${v.videoId===currentVideoId?"▶":"▷"}</span>`;
-    el.onclick = () => playYT(v.videoId, v.title||"");
+    el.onmousedown = e => e.stopPropagation();
+    el.onclick = () => playYT(v.videoId, v.title||"", el);
     res.appendChild(el);
   });
 }
 
-function musicQuick(term) { q("#music-inp").value=term; musicSearch(); }
+function musicQuick(term) { q("#music-inp").value=term; hasPrevPage=false; _musicLastStat=""; musicSearch(); }
 
-function playYT(videoId, title) {
+function playYT(videoId, title, clickedEl) {
+  stopMusic(); // remove any existing inline player first
   currentVideoId = videoId;
-  document.querySelectorAll(".music-item[data-vid]").forEach(el=>{
-    const isPlaying = el.dataset.vid===videoId;
+
+  // Mark clicked item as playing
+  document.querySelectorAll(".music-item[data-vid]").forEach(el => {
+    const isPlaying = el.dataset.vid === videoId;
     el.classList.toggle("playing", isPlaying);
     const ico = el.querySelector("span:last-child");
-    if(ico) ico.textContent = isPlaying ? "▶" : "▷";
+    if (ico) ico.textContent = isPlaying ? "▶" : "▷";
   });
-  showPlayer("yt", title, "YouTube");
 
-  // Hide any previous embed notice
-  const notice = q("#music-embed-notice");
-  if (notice) notice.style.display = "none";
+  // Build inline player and insert right after the clicked item
+  const wrap = _buildInlinePlayer("yt", title, "YouTube");
+  if (clickedEl && clickedEl.parentNode) {
+    clickedEl.parentNode.insertBefore(wrap, clickedEl.nextSibling);
+  } else {
+    // Fallback: append to results container
+    const res = q("#music-results") || q("#local-results");
+    if (res) res.appendChild(wrap);
+  }
 
-  const iframe = q("#music-iframe");
-
-  // Only show "can't embed" when we actually detect YouTube's unavailable page.
-  // Cross-origin usually blocks contentDocument access, giving empty string — do NOT treat that as unavailable.
+  const iframe = wrap.querySelector("#music-iframe");
+  const notice = wrap.querySelector("#music-embed-notice");
   iframe.onload = () => {
     setTimeout(() => {
       try {
-        const t = (iframe.contentDocument && iframe.contentDocument.title) ? iframe.contentDocument.title : "";
-        if (t && t.toLowerCase().includes("unavailable")) {
-          if (notice) notice.style.display = "block";
-        }
-      } catch(e) {
-        // Cross-origin — can't read; assume embed is fine, don't show notice
-      }
+        const t = iframe.contentDocument?.title || "";
+        if (t && t.toLowerCase().includes("unavailable") && notice) notice.style.display = "block";
+      } catch(e) {}
     }, 1500);
   };
-
   iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+
+  // Scroll the player into view smoothly
+  wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-// ── Local Files ──────────────────────────────────────
+function playLocal(path, name, kind, ext, clickedEl) {
+  stopMusic();
+
+  // Mark clicked item as playing
+  document.querySelectorAll(".local-item").forEach(i => {
+    i.classList.remove("playing");
+    const s = i.querySelector("span:last-child"); if (s) s.textContent = "▷";
+  });
+  if (clickedEl) {
+    clickedEl.classList.add("playing");
+    const s = clickedEl.querySelector("span:last-child"); if (s) s.textContent = "▶";
+  }
+
+  const url = `/api/music/stream?path=${encodeURIComponent(path)}`;
+  const srcLabel = kind === "audio" ? `${(ext||"").toUpperCase()} · Local file`
+                 : kind === "video" ? `${(ext||"").toUpperCase()} · Local video`
+                 : kind === "image" ? `${(ext||"").toUpperCase()} · Image`
+                 : `${(ext||"").toUpperCase()} · Document`;
+
+  const wrap = _buildInlinePlayer(kind, name, srcLabel);
+  if (clickedEl && clickedEl.parentNode) {
+    clickedEl.parentNode.insertBefore(wrap, clickedEl.nextSibling);
+  } else {
+    const res = q("#local-results"); if (res) res.appendChild(wrap);
+  }
+
+  if (kind === "doc") {
+    const openBtn = wrap.querySelector("#music-doc-open-btn");
+    if (openBtn) openBtn.onclick = () => window.open(url, "_blank");
+  } else if (kind === "image") {
+    const img = wrap.querySelector("#music-img");
+    if (img) img.src = url;
+  } else if (kind === "video") {
+    const vid = wrap.querySelector("#music-video");
+    if (vid) { vid.src = url; vid.play().catch(()=>{}); }
+  } else {
+    // audio
+    const audio = wrap.querySelector("#music-audio");
+    if (audio) { audio.src = url; audio.play().catch(()=>{}); }
+  }
+
+  wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function _buildInlinePlayer(type, title, srcLabel) {
+  // Remove any existing inline player
+  const existing = q("#music-player-wrap");
+  if (existing) existing.remove();
+
+  const wrap = document.createElement("div");
+  wrap.id = "music-player-wrap";
+  wrap.style.cssText = "margin:6px 0 4px;animation:slideUp .18s var(--ease) both";
+
+  const isYt   = type === "yt";
+  const isAudio= type === "local" || type === "audio";
+  const isVideo= type === "video";
+  const isImage= type === "image";
+  const isDoc  = type === "doc";
+
+  wrap.innerHTML = `
+    <div style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden">
+      <div style="padding:8px 12px;background:var(--accentbg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+        <div style="width:22px;height:22px;background:${isYt?"#ff0000":"var(--accent)"};border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-size:9px;color:#fff;font-weight:700">▶</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(title)}</div>
+          <div style="font-size:9px;color:var(--muted)">${esc(srcLabel)}</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:3px 9px;font-size:10px;flex-shrink:0" onclick="stopMusic()">✕</button>
+      </div>
+      ${isYt ? `
+        <div style="position:relative;padding-bottom:56.25%;height:0">
+          <iframe id="music-iframe" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allowfullscreen allow="autoplay;encrypted-media"></iframe>
+          <div id="music-embed-notice" style="display:none;position:absolute;bottom:8px;left:0;right:0;text-align:center;pointer-events:none">
+            <span style="background:rgba(0,0,0,.75);color:#aaa;font-size:10px;padding:4px 10px;border-radius:20px">⚠ This video can't embed — try another.</span>
+          </div>
+        </div>` : ""}
+      ${isAudio ? `
+        <div style="padding:10px 12px">
+          <audio id="music-audio" controls style="width:100%;border-radius:var(--rs);background:var(--surface);height:36px" preload="auto"></audio>
+        </div>` : ""}
+      ${isVideo ? `
+        <div style="padding:0">
+          <video id="music-video" controls style="width:100%;background:#000;max-height:280px;display:block" preload="auto"></video>
+        </div>` : ""}
+      ${isImage ? `
+        <div style="padding:10px;text-align:center">
+          <img id="music-img" src="" style="max-width:100%;max-height:300px;border-radius:var(--rs);object-fit:contain">
+        </div>` : ""}
+      ${isDoc ? `
+        <div style="padding:12px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Documents open in your default app.</div>
+          <button class="btn btn-p btn-full" id="music-doc-open-btn" style="font-size:11px">↗ Open File</button>
+        </div>` : ""}
+    </div>`;
+
+  return wrap;
+}
+
+function stopMusic() {
+  const wrap = q("#music-player-wrap");
+  if (!wrap) return;
+  // Pause anything playing before removing
+  const audio = wrap.querySelector("#music-audio"); if (audio) { audio.pause(); audio.src = ""; }
+  const vid   = wrap.querySelector("#music-video"); if (vid)   { vid.pause();   vid.src = ""; }
+  const iframe= wrap.querySelector("#music-iframe"); if (iframe) iframe.src = "";
+  wrap.remove();
+  currentVideoId = null;
+  document.querySelectorAll(".music-item").forEach(i => {
+    i.classList.remove("playing");
+    const s = i.querySelector("span:last-child"); if (s) s.textContent = "▷";
+  });
+}
+
 async function loadLocalRoots() {
   const r = await get("/api/music/roots").catch(()=>({roots:[]}));
   const rootsCont = q("#local-roots");
@@ -1946,7 +2535,7 @@ async function loadLocalRoots() {
     chip.onclick = () => { q("#local-dir-inp").value=folder; localBrowse(); };
     rootsCont.appendChild(chip);
   });
-  if(!r.roots||!r.roots.length) rootsCont.innerHTML='<span style="font-size:10px;color:var(--muted)">No music folders found. Type a path above.</span>';
+  if(!r.roots||!r.roots.length) rootsCont.innerHTML='<span style="font-size:10px;color:var(--muted)">No folders found. Type a path above.</span>';
 }
 
 async function localBrowse() {
@@ -1960,68 +2549,92 @@ async function localBrowse() {
   if (r.error) { stat.innerHTML=`<span style="color:var(--orange)">⚠ ${esc(r.error)}</span>`; return; }
   localFiles = r.files||[];
   localFilesFiltered = [...localFiles];
-  stat.textContent = `${localFiles.length} track(s) found in ${dir}`;
-  q("#local-search-wrap").style.display = localFiles.length>8 ? "" : "none";
-  q("#local-search").value = "";
-  renderLocalFiles(localFiles);
+  _activeExtFilter = null;
+  _localSort = "name-asc";
+  _localGroup = "none";
+  _renderActiveTypeBadges();
+  // Reset sort/group button states
+  document.querySelectorAll(".local-sort-btn[data-sort]").forEach(b => b.classList.toggle("on", b.dataset.sort === "name-asc"));
+  document.querySelectorAll(".local-sort-btn[data-group]").forEach(b => b.classList.toggle("on", b.dataset.group === "none"));
+  stat.textContent = `${localFiles.length} file(s) found in ${dir}`;
+  const sw = q("#local-search-wrap");
+  if (sw) sw.style.display = localFiles.length > 4 ? "" : "none";
+  const sb = q("#local-sort-bar");
+  if (sb) sb.style.display = localFiles.length > 1 ? "" : "none";
+  if (q("#local-search")) q("#local-search").value = "";
+  renderLocalFiles(localFiles, "none");
 }
 
 function localFilter(q2) {
-  const term = q2.toLowerCase();
-  localFilesFiltered = localFiles.filter(f=>f.name.toLowerCase().includes(term));
-  renderLocalFiles(localFilesFiltered);
+  _applyLocalFilters();
 }
 
-function renderLocalFiles(files) {
+function _fileIcon(kind, ext) {
+  if (kind==="audio") return "🎵";
+  if (kind==="video") return "🎬";
+  if (kind==="image") return "🖼";
+  if (kind==="doc") {
+    if (ext==="pdf") return "📄";
+    if (["doc","docx","odt","rtf"].includes(ext)) return "📝";
+    if (["xls","xlsx","csv"].includes(ext)) return "📊";
+    if (["ppt","pptx"].includes(ext)) return "📋";
+    return "📄";
+  }
+  return "📁";
+}
+
+function _kindColor(kind) {
+  if (kind==="audio") return "var(--accent)";
+  if (kind==="video") return "#ef4444";
+  if (kind==="image") return "var(--green)";
+  if (kind==="doc")   return "var(--orange)";
+  return "var(--muted)";
+}
+
+function renderLocalFiles(files, group) {
   const res = q("#local-results");
   res.innerHTML = "";
-  if (!files.length) { res.innerHTML='<div class="empty">No tracks match your search.</div>'; return; }
-  files.forEach(f => {
+  if (!files.length) { res.innerHTML='<div class="empty">No files match your search.</div>'; return; }
+
+  const renderItem = (f) => {
     const el = document.createElement("div");
     el.className = "music-item local-item";
     const sizeStr = f.size>1048576 ? (f.size/1048576).toFixed(1)+" MB" : (f.size/1024).toFixed(0)+" KB";
+    const icon = _fileIcon(f.kind||"other", f.ext||"");
+    const kindColor = _kindColor(f.kind||"other");
+    const dateStr = f.mtime ? new Date(f.mtime*1000).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
     el.innerHTML = `
-      <div style="width:40px;height:40px;background:var(--accenthl);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎵</div>
+      <div style="width:40px;height:40px;background:var(--card);border:1px solid var(--border2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${icon}</div>
       <div style="flex:1;min-width:0">
         <div class="music-title">${esc(f.name)}</div>
-        <div class="music-ch">${f.ext.toUpperCase()} · ${sizeStr}</div>
+        <div class="music-ch"><span style="color:${kindColor};font-weight:600">${(f.ext||"").toUpperCase()}</span> · ${sizeStr}${dateStr ? " · "+dateStr : ""}</div>
       </div>
       <span style="font-size:15px;color:var(--accent2);flex-shrink:0">▷</span>`;
-    el.onclick = () => playLocal(f.path, f.name, el);
-    res.appendChild(el);
+    el.onmousedown = e => e.stopPropagation();
+    el.onclick = () => playLocal(f.path, f.name, f.kind||"other", f.ext||"", el);
+    return el;
+  };
+
+  if (!group || group === "none") {
+    files.forEach(f => res.appendChild(renderItem(f)));
+    return;
+  }
+
+  // Grouped rendering — preserve order, just add headers at group boundaries
+  const groups = new Map();
+  files.forEach(f => {
+    const key = _getGroupKey(f, group);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
   });
-}
 
-function playLocal(path, name, el) {
-  document.querySelectorAll(".local-item").forEach(i=>{ i.classList.remove("playing"); const s=i.querySelector("span:last-child"); if(s)s.textContent="▷"; });
-  if(el){ el.classList.add("playing"); const s=el.querySelector("span:last-child"); if(s)s.textContent="▶"; }
-  showPlayer("local", name, "Local File");
-  const audio = q("#music-audio");
-  audio.src = `/api/music/stream?path=${encodeURIComponent(path)}`;
-  audio.play().catch(()=>{});
-}
-
-// ── Shared Player ────────────────────────────────────
-function showPlayer(type, title, srcLabel) {
-  const wrap = q("#music-player-wrap");
-  wrap.style.display = "";
-  q("#music-now-title").textContent = title;
-  q("#music-now-src").textContent   = srcLabel;
-  q("#music-yt-player").style.display    = type==="yt"    ? "" : "none";
-  q("#music-local-player").style.display = type==="local" ? "" : "none";
-  q("#music-player-ico").textContent     = "▶";
-  if(type==="yt") q("#music-local-player").querySelector("audio").pause();
-  if(type==="local") q("#music-iframe").src="";
-  wrap.scrollIntoView({behavior:"smooth",block:"nearest"});
-}
-
-function stopMusic() {
-  q("#music-iframe").src = "";
-  const audio = q("#music-audio"); audio.pause(); audio.src="";
-  currentVideoId = null;
-  q("#music-player-wrap").style.display="none";
-  q("#music-now-title").textContent="Nothing playing";
-  document.querySelectorAll(".music-item").forEach(i=>{ i.classList.remove("playing"); const s=i.querySelector("span:last-child"); if(s)s.textContent="▷"; });
+  groups.forEach((items, key) => {
+    const hdr = document.createElement("div");
+    hdr.className = "local-group-header";
+    hdr.innerHTML = `${esc(key)} <span style="color:var(--muted);font-weight:400;font-size:9px">${items.length}</span>`;
+    res.appendChild(hdr);
+    items.forEach(f => res.appendChild(renderItem(f)));
+  });
 }
 
 function fmtDur(s) {
@@ -2032,29 +2645,71 @@ function fmtDur(s) {
 // ══════════════════════════════════════════════════════
 //  IMAGE ATTACHMENTS + REGION SELECTOR
 // ══════════════════════════════════════════════════════
-function attachImages(input, tab) {
+// Accepted non-image types that we convert to base64 and pass as images (PDF pages rendered by AI)
+// or as text context
+const _TEXT_EXTS = new Set(["txt","md","csv","rtf"]);
+const _DOC_EXTS_AI = new Set(["pdf","docx","doc"]);
+
+function attachFiles(input, tab) {
   const files = Array.from(input.files);
   if (!files.length) return;
   files.forEach(file => {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const isText = _TEXT_EXTS.has(ext);
     const reader = new FileReader();
-    reader.onload = e => {
-      const b64 = e.target.result.split(",")[1]; // strip data:image/...;base64,
-      _attachedImages[tab].push(b64);
-      renderImageChips(tab);
-    };
-    reader.readAsDataURL(file);
+    if (isText) {
+      // Read text files as plain text → inject as context box
+      reader.onload = e => {
+        const text = e.target.result;
+        // Push into context boxes for this tab so the AI sees it as text context
+        const cont = q(`#${tab}-ctx-boxes`);
+        if (cont) {
+          const id = `ctx-${tab}-${Date.now()}`;
+          const box = document.createElement("div");
+          box.className = "ctx-box"; box.id = id;
+          box.innerHTML = `<textarea style="font-family:Consolas,monospace;font-size:10px">${esc(text.substring(0,8000))}</textarea><button class="ctx-del" onclick="q('#${id}').remove()">✕</button>`;
+          cont.appendChild(box);
+        }
+        // Also show a chip so user can see it was attached
+        _attachedImages[tab].push({ kind:"text", name: file.name, b64: null });
+        renderImageChips(tab);
+        _updateShotBtn(tab);
+      };
+      reader.readAsText(file);
+    } else {
+      // Images and PDFs → base64 → send as image to AI (Groq vision handles PDFs too)
+      reader.onload = e => {
+        const b64 = e.target.result.split(",")[1];
+        const isImg = file.type.startsWith("image/");
+        _attachedImages[tab].push({ kind: isImg ? "image" : "pdf", name: file.name, b64 });
+        renderImageChips(tab);
+        _updateShotBtn(tab);
+      };
+      reader.readAsDataURL(file);
+    }
   });
-  input.value = ""; // reset so same file can be added again
+  input.value = "";
 }
+
+// Keep old attachImages as alias for region selector which still pushes raw b64 strings
+function attachImages(input, tab) { attachFiles(input, tab); }
 
 function renderImageChips(tab) {
   const cont = q("#img-attach-" + tab);
-  if (!cont) return;  // element may not exist for this tab (e.g. math tab has no attach UI)
+  if (!cont) return;
   cont.innerHTML = "";
-  _attachedImages[tab].forEach((b64, i) => {
+  _attachedImages[tab].forEach((item, i) => {
+    // Support both old plain b64 strings and new {kind,name,b64} objects
+    const isObj = typeof item === "object" && item !== null;
+    const kind  = isObj ? item.kind  : "image";
+    const name  = isObj ? item.name  : `Image ${i+1}`;
+    const b64   = isObj ? item.b64   : item;
     const chip = document.createElement("div");
     chip.className = "img-chip";
-    chip.innerHTML = `<img src="data:image/jpeg;base64,${b64}"><span>Image ${i+1}</span><button class="chip-del" onclick="removeImage('${tab}',${i})">✕</button>`;
+    const icons = { image:"🖼", pdf:"📄", text:"📝" };
+    const icon = icons[kind] || "📎";
+    const preview = (kind === "image" && b64) ? `<img src="data:image/jpeg;base64,${b64}" style="width:22px;height:22px;object-fit:cover;border-radius:3px">` : `<span style="font-size:14px;line-height:1">${icon}</span>`;
+    chip.innerHTML = `${preview}<span style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px">${esc(name)}</span><button class="chip-del" onclick="removeImage('${tab}',${i})">✕</button>`;
     cont.appendChild(chip);
   });
 }
@@ -2062,17 +2717,18 @@ function renderImageChips(tab) {
 function removeImage(tab, i) {
   _attachedImages[tab].splice(i, 1);
   renderImageChips(tab);
+  _updateShotBtn(tab);
 }
 
 // ── Region Selector ──────────────────────────────────
-let _regionMode = "scan";  // which tab opened it
+let _regionMode = "scan";
 let _regionHwnd = null;
-let _regionFull = { x:0, y:0, w:1, h:1 }; // fallback = full image
-let _regionSel  = null;   // {x,y,w,h} fractions selected by user
+let _regionFull = { x:0, y:0, w:1, h:1 };
+let _regionSel  = null;
 let _regionDrag = false;
 let _regionStart = null;
-
-let _previewB64 = null;  // full-res b64 for magnifier sampling
+let _previewB64 = null;
+let _magEnabled = true; // magnifier on by default, user can toggle
 
 function _regionSetState(state, errMsg) {
   q("#region-loading").style.display = state === "loading" ? "flex" : "none";
@@ -2081,11 +2737,27 @@ function _regionSetState(state, errMsg) {
   if (state === "error" && errMsg) q("#region-error-msg").textContent = errMsg;
 }
 
+function _regionUpdateConfirmLabel() {
+  const btn = q("#region-confirm-btn");
+  if (!btn) return;
+  const labels = { scan:"✓ Scan This Region", math:"✓ Solve This Region", qa:"✓ Ask AI About Region" };
+  btn.textContent = labels[_regionMode] || "✓ Confirm Region";
+}
+
+function toggleMagnifier() {
+  _magEnabled = !_magEnabled;
+  const btn = q("#mag-toggle-btn");
+  if (btn) { btn.textContent = _magEnabled ? "🔍 Magnify: ON" : "🔍 Magnify: OFF"; btn.style.opacity = _magEnabled ? "1" : "0.5"; }
+  if (!_magEnabled && q("#mag-lens")) q("#mag-lens").style.display = "none";
+}
+
 async function openRegionSelector(tab) {
   _regionMode = tab;
-  _regionHwnd = tab === "scan" ? hwndScan : hwndMath;
+  _regionHwnd = tab==="scan" ? hwndScan : tab==="qa" ? hwndQa : hwndMath;
   _regionSel = null; _previewB64 = null;
-  q("#region-confirm-btn").disabled = true;
+  const confirmBtn = q("#region-confirm-btn");
+  if (confirmBtn) confirmBtn.disabled = true;
+  _regionUpdateConfirmLabel();
   q("#region-box").style.display = "none";
   q("#mag-lens").style.display = "none";
   q("#region-overlay").classList.add("open");
@@ -2095,14 +2767,19 @@ async function openRegionSelector(tab) {
 
 async function retryRegion() {
   _regionSel = null; _previewB64 = null;
-  q("#region-confirm-btn").disabled = true;
+  const confirmBtn = q("#region-confirm-btn");
+  if (confirmBtn) confirmBtn.disabled = true;
   q("#region-box").style.display = "none";
   _regionSetState("loading");
   await _doRegionFetch();
 }
 
 async function _doRegionFetch() {
-  const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }).catch(e => ({ error: e.message }));
+  if (!_regionHwnd) {
+    _regionSetState("error", "⚠ No window selected — click Refresh and pick a window first.");
+    return;
+  }
+  const r = await post("/api/screenshot/preview", { hwnd: _regionHwnd }, 12000).catch(e => ({ error: e.message }));
   if (!q("#region-overlay").classList.contains("open")) return;
   if (r.error || !r.b64) {
     _regionSetState("error", "⚠ " + (r.error || "Screenshot returned empty — try refreshing the window list."));
@@ -2118,18 +2795,64 @@ async function _doRegionFetch() {
 function closeRegion() {
   q("#region-overlay").classList.remove("open");
   _regionDrag = false; _regionSel = null;
+  if (q("#mag-lens")) q("#mag-lens").style.display = "none";
 }
 
 function scanFullScreen() {
   _regionSel = null;
   closeRegion();
-  doShot(_regionMode, null);
+  if (_regionMode === "qa") {
+    // For Q&A full-screen: capture the full screenshot and attach it
+    _qaAttachScreenshot(null);
+  } else {
+    doShot(_regionMode, null);
+  }
 }
 
 async function confirmRegion() {
   if (!_regionSel) return;
+  const sel = { ..._regionSel };
   closeRegion();
-  doShot(_regionMode, _regionSel);
+  if (_regionMode === "qa") {
+    _qaAttachScreenshot(sel);
+  } else {
+    doShot(_regionMode, sel);
+  }
+}
+
+async function _qaFullScreen() {
+  if (!hwndQa) { const s=q("#qa-screen-stat"); if(s){s.textContent="⚠ Select a window first";s.style.color="var(--orange)";} return; }
+  await _qaAttachScreenshot(null);
+}
+
+async function _qaAttachScreenshot(region) {
+  const stat = q("#qa-screen-stat");
+  if (stat) { stat.textContent = "📸 Capturing…"; stat.style.color = "var(--accent2)"; }
+  const r = await post("/api/screenshot/preview", { hwnd: hwndQa }, 12000).catch(e => ({ error: e.message }));
+  if (r.error || !r.b64) {
+    if (stat) { stat.textContent = "⚠ " + (r.error || "Capture failed"); stat.style.color = "var(--red)"; }
+    return;
+  }
+  if (region) {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const cw = Math.round(img.width * region.w);
+      const ch = Math.round(img.height * region.h);
+      canvas.width = cw; canvas.height = ch;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, img.width*region.x, img.height*region.y, cw, ch, 0, 0, cw, ch);
+      const b64 = canvas.toDataURL("image/png").split(",")[1];
+      _attachedImages.qa.push(b64);
+      renderImageChips("qa");
+      if (stat) { stat.textContent = "✓ Screenshot attached"; stat.style.color = "var(--green)"; setTimeout(()=>{ if(stat) stat.textContent=""; }, 2500); }
+    };
+    img.src = "data:image/png;base64," + r.b64;
+  } else {
+    _attachedImages.qa.push(r.b64);
+    renderImageChips("qa");
+    if (stat) { stat.textContent = "✓ Screenshot attached"; stat.style.color = "var(--green)"; setTimeout(()=>{ if(stat) stat.textContent=""; }, 2500); }
+  }
 }
 
 // Region drag + magnifier
@@ -2143,7 +2866,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const LSIZE = 180;
 
   function updateMag(clientX, clientY) {
-    if (!_previewB64 || !lens) return;
+    if (!_magEnabled || !_previewB64 || !lens) return;
     const imgEl = q("#region-img");
     const ir = imgEl.getBoundingClientRect();
     const mx = clientX - ir.left;
@@ -2426,6 +3149,213 @@ function ytGetContext(tab) {
   return _ytTranscript[tab] ? '[YOUTUBE VIDEO TRANSCRIPT]:\n' + _ytTranscript[tab] : null;
 }
 
+// ══════════════════════════════════════════════════════
+//  FILE TYPE PICKER
+// ══════════════════════════════════════════════════════
+const FILE_TYPE_GROUPS = [
+  { label:"🎵 Audio", types:[
+    {ext:"mp3",label:"MP3"},
+    {ext:"flac",label:"FLAC"},
+    {ext:"wav",label:"WAV"},
+    {ext:"aac",label:"AAC"},
+    {ext:"ogg",label:"OGG"},
+    {ext:"m4a",label:"M4A"},
+    {ext:"wma",label:"WMA"},
+    {ext:"opus",label:"OPUS"},
+    {ext:"aiff",label:"AIFF"},
+    {ext:"ape",label:"APE"},
+    {ext:"alac",label:"ALAC"},
+  ]},
+  { label:"🎬 Video", types:[
+    {ext:"mp4",label:"MP4"},
+    {ext:"mkv",label:"MKV"},
+    {ext:"avi",label:"AVI"},
+    {ext:"mov",label:"MOV"},
+    {ext:"wmv",label:"WMV"},
+    {ext:"webm",label:"WEBM"},
+    {ext:"flv",label:"FLV"},
+    {ext:"m4v",label:"M4V"},
+    {ext:"mpg",label:"MPG"},
+    {ext:"ts",label:"TS"},
+    {ext:"3gp",label:"3GP"},
+  ]},
+  { label:"🖼 Images", types:[
+    {ext:"jpg",label:"JPG"},
+    {ext:"jpeg",label:"JPEG"},
+    {ext:"png",label:"PNG"},
+    {ext:"gif",label:"GIF"},
+    {ext:"webp",label:"WEBP"},
+    {ext:"bmp",label:"BMP"},
+    {ext:"tiff",label:"TIFF"},
+    {ext:"svg",label:"SVG"},
+    {ext:"heic",label:"HEIC"},
+    {ext:"avif",label:"AVIF"},
+    {ext:"ico",label:"ICO"},
+  ]},
+  { label:"📄 Documents", types:[
+    {ext:"pdf",label:"PDF"},
+    {ext:"docx",label:"DOCX"},
+    {ext:"doc",label:"DOC"},
+    {ext:"txt",label:"TXT"},
+    {ext:"md",label:"MD"},
+    {ext:"rtf",label:"RTF"},
+    {ext:"odt",label:"ODT"},
+    {ext:"epub",label:"EPUB"},
+  ]},
+  { label:"📊 Spreadsheets & Data", types:[
+    {ext:"xlsx",label:"XLSX"},
+    {ext:"xls",label:"XLS"},
+    {ext:"csv",label:"CSV"},
+  ]},
+  { label:"📋 Presentations", types:[
+    {ext:"pptx",label:"PPTX"},
+    {ext:"ppt",label:"PPT"},
+  ]},
+];
+
+// null = all types shown; Set of exts = filtered
+let _activeExtFilter = null;
+let _localSort  = "name-asc";
+let _localGroup = "none";
+
+function setLocalSort(s) {
+  _localSort = s;
+  document.querySelectorAll(".local-sort-btn[data-sort]").forEach(b => b.classList.toggle("on", b.dataset.sort === s));
+  _applyLocalFilters();
+}
+
+function setLocalGroup(g) {
+  _localGroup = g;
+  document.querySelectorAll(".local-sort-btn[data-group]").forEach(b => b.classList.toggle("on", b.dataset.group === g));
+  _applyLocalFilters();
+}
+
+function openFileTypeMenu() {
+  const body = q("#filetype-body");
+  body.innerHTML = "";
+  FILE_TYPE_GROUPS.forEach(group => {
+    const groupDiv = document.createElement("div");
+    groupDiv.style.cssText = "margin-bottom:14px";
+    groupDiv.innerHTML = `<div style="font-size:9px;font-weight:700;color:var(--accent2);letter-spacing:.06em;margin-bottom:8px">${group.label}</div>`;
+    const grid = document.createElement("div");
+    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px";
+    group.types.forEach(t => {
+      const checked = _activeExtFilter === null || _activeExtFilter.has(t.ext);
+      const item = document.createElement("label");
+      item.style.cssText = "display:flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 9px;cursor:pointer;transition:border-color var(--t),background var(--t);font-size:11px;font-weight:600;color:var(--text2);user-select:none";
+      item.innerHTML = `<input type="checkbox" data-ext="${t.ext}" ${checked?"checked":""} style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0"><span>${t.label}</span>`;
+      item.querySelector("input").addEventListener("change", e => {
+        item.style.borderColor = e.target.checked ? "var(--accent)" : "var(--border)";
+        item.style.background  = e.target.checked ? "var(--accentbg)" : "var(--card2)";
+      });
+      if (checked) { item.style.borderColor="var(--accent)"; item.style.background="var(--accentbg)"; }
+      grid.appendChild(item);
+    });
+    groupDiv.appendChild(grid);
+    body.appendChild(groupDiv);
+  });
+  q("#filetype-overlay").style.display = "flex";
+}
+
+function closeFileTypeMenu() {
+  q("#filetype-overlay").style.display = "none";
+}
+
+function ftSelectAll() {
+  q("#filetype-body").querySelectorAll("input[type=checkbox]").forEach(cb => {
+    cb.checked = true;
+    const lbl = cb.closest("label");
+    if (lbl) { lbl.style.borderColor="var(--accent)"; lbl.style.background="var(--accentbg)"; }
+  });
+}
+
+function ftSelectNone() {
+  q("#filetype-body").querySelectorAll("input[type=checkbox]").forEach(cb => {
+    cb.checked = false;
+    const lbl = cb.closest("label");
+    if (lbl) { lbl.style.borderColor="var(--border)"; lbl.style.background="var(--card2)"; }
+  });
+}
+
+function confirmFileTypes() {
+  const checked = new Set();
+  q("#filetype-body").querySelectorAll("input[type=checkbox]:checked").forEach(cb => checked.add(cb.dataset.ext));
+  const total = q("#filetype-body").querySelectorAll("input[type=checkbox]").length;
+  // If everything is checked, treat as no filter
+  _activeExtFilter = checked.size === total ? null : checked;
+  closeFileTypeMenu();
+  _applyLocalFilters();
+  _renderActiveTypeBadges();
+}
+
+function _renderActiveTypeBadges() {
+  const cont = q("#local-active-types");
+  if (!cont) return;
+  cont.innerHTML = "";
+  if (!_activeExtFilter) return;
+  _activeExtFilter.forEach(ext => {
+    const badge = document.createElement("span");
+    badge.style.cssText = "display:inline-flex;align-items:center;gap:4px;background:var(--accentbg);border:1px solid var(--accent);border-radius:20px;padding:2px 8px;font-size:9.5px;font-weight:700;color:var(--accent2)";
+    badge.innerHTML = `${ext.toUpperCase()} <span style="cursor:pointer;color:var(--muted)" onclick="_removeExtFilter('${ext}')">✕</span>`;
+    cont.appendChild(badge);
+  });
+}
+
+function _removeExtFilter(ext) {
+  if (!_activeExtFilter) return;
+  _activeExtFilter.delete(ext);
+  if (_activeExtFilter.size === 0) _activeExtFilter = null;
+  _applyLocalFilters();
+  _renderActiveTypeBadges();
+}
+
+function _applyLocalFilters() {
+  const term = (q("#local-search")?.value || "").toLowerCase();
+  let filtered = localFiles;
+  if (_activeExtFilter) filtered = filtered.filter(f => _activeExtFilter.has(f.ext));
+  if (term) filtered = filtered.filter(f => f.name.toLowerCase().includes(term));
+
+  // Sort
+  filtered = [...filtered];
+  const sorts = {
+    "name-asc":  (a,b) => a.name.localeCompare(b.name),
+    "name-desc": (a,b) => b.name.localeCompare(a.name),
+    "newest":    (a,b) => (b.mtime||0) - (a.mtime||0),
+    "oldest":    (a,b) => (a.mtime||0) - (b.mtime||0),
+    "size-desc": (a,b) => (b.size||0)  - (a.size||0),
+    "size-asc":  (a,b) => (a.size||0)  - (b.size||0),
+    "ext":       (a,b) => (a.ext||"").localeCompare(b.ext||"") || a.name.localeCompare(b.name),
+  };
+  if (sorts[_localSort]) filtered.sort(sorts[_localSort]);
+
+  renderLocalFiles(filtered, _localGroup);
+}
+
+function _getGroupKey(f, group) {
+  if (group === "kind") {
+    return { audio:"🎵 Audio", video:"🎬 Video", image:"🖼 Images", doc:"📄 Documents" }[f.kind] || "📁 Other";
+  }
+  if (group === "ext") return (f.ext||"other").toUpperCase();
+  if (group === "size") {
+    const mb = (f.size||0) / 1048576;
+    if (mb < 1)   return "Under 1 MB";
+    if (mb < 10)  return "1 – 10 MB";
+    if (mb < 50)  return "10 – 50 MB";
+    if (mb < 200) return "50 – 200 MB";
+    return "Over 200 MB";
+  }
+  if (group === "date") {
+    if (!f.mtime) return "Unknown date";
+    const diffDays = (Date.now() - f.mtime*1000) / 86400000;
+    if (diffDays < 1)   return "Today";
+    if (diffDays < 7)   return "This week";
+    if (diffDays < 30)  return "This month";
+    if (diffDays < 365) return "This year";
+    return new Date(f.mtime*1000).getFullYear().toString();
+  }
+  return null;
+}
+
 boot();
 </script>
 <script>
@@ -2450,7 +3380,7 @@ document.addEventListener("mouseup", () => dragEnd());
     </div>
   </div>
   <div id="region-main">
-    <div id="region-hint">🖱 Drag to select a region &middot; hover to magnify &middot; <b>Esc</b> to cancel</div>
+    <div id="region-hint">🖱 Drag to select a region &middot; <b>Esc</b> to cancel</div>
     <div id="region-wrap">
       <img id="region-img" src="" alt="">
       <div id="region-box"></div>
@@ -2459,7 +3389,28 @@ document.addEventListener("mouseup", () => dragEnd());
     <div id="region-actions">
       <button class="btn btn-p" id="region-confirm-btn" onclick="confirmRegion()" disabled>✓ Scan This Region</button>
       <button class="btn btn-ghost" onclick="closeRegion()">✕ Cancel</button>
-      <button class="btn btn-s" id="region-fullbtn" onclick="scanFullScreen()">📸 Scan Full Screen</button>
+      <button class="btn btn-s" id="region-fullbtn" onclick="scanFullScreen()">📸 Full Screen</button>
+      <button class="btn btn-ghost" id="mag-toggle-btn" onclick="toggleMagnifier()" style="font-size:10px;padding:6px 10px">🔍 Magnify: ON</button>
+    </div>
+  </div>
+</div>
+<!-- ─── FILE TYPE PICKER OVERLAY ─── -->
+<div id="filetype-overlay" style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--bg);width:100%;max-width:460px;border-radius:var(--r);border:1px solid var(--border2);overflow:hidden;animation:slideDown .18s var(--ease) both;max-height:90vh;display:flex;flex-direction:column">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card2);border-bottom:1px solid var(--border);flex-shrink:0">
+      <span style="font-size:13px;font-weight:700;color:var(--text)">🗂 Show Specific Types</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px" onclick="ftSelectAll()">All</button>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:10px" onclick="ftSelectNone()">None</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="overflow-y:auto;padding:14px 16px;flex:1" id="filetype-body"></div>
+    <!-- Footer -->
+    <div style="padding:12px 16px;background:var(--card2);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0">
+      <button class="btn btn-p" style="flex:1" onclick="confirmFileTypes()">✓ Confirm</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="closeFileTypeMenu()">✕ Cancel</button>
     </div>
   </div>
 </div>

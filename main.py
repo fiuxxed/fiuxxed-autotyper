@@ -144,6 +144,11 @@ try:
     HAS_PLOT = True
 except ImportError: HAS_PLOT = False
 
+try:
+    import fitz as _fitz   # PyMuPDF — pip install pymupdf
+    HAS_FITZ = True
+except ImportError: HAS_FITZ = False
+
 BROWSERS = {"chrome","firefox","msedge","opera","brave","vivaldi","chromium","iexplore","waterfox","librewolf"}
 
 # ── Formula Library ──────────────────────────────────────────────────
@@ -513,11 +518,12 @@ class VoiceListener:
 # ══════════════════════════════════════════════════════════════════════
 #  SCREENSHOT + IMAGE
 # ══════════════════════════════════════════════════════════════════════
-def capture_window(hwnd=None):
+def capture_window(hwnd=None, bring_to_front=True):
     if not HAS_MSS: raise RuntimeError("mss/pillow not installed")
     if hwnd and HAS_WIN32:
-        try: win32gui.SetForegroundWindow(hwnd); time.sleep(0.45)
-        except Exception: pass
+        if bring_to_front:
+            try: win32gui.SetForegroundWindow(hwnd); time.sleep(0.45)
+            except Exception: pass
         rect = win32gui.GetWindowRect(hwnd)
         x1, y1, x2, y2 = rect; w = x2-x1; h = y2-y1
         if w < 10 or h < 10: raise RuntimeError("Window too small")
@@ -808,7 +814,6 @@ def ai_scan(b64, strictness="flag_all", examine_examples=False, extra_context=No
 
 def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
     client = get_client()
-    # Build image list: primary screenshot + any extra images
     img_parts = [{"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}]
     for ei in (extra_images or []):
         if ei: img_parts.append({"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{ei}" if not ei.startswith("data:") else ei}})
@@ -817,57 +822,113 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
         messages=[{"role":"user","content":img_parts + [
             {"type":"text","text":(
                 (("EXTRA CONTEXT (use this to help solve problems):\n" + "\n\n".join(c.strip() for c in extra_context if c and c.strip()) + "\n\n") if extra_context and any(c.strip() for c in extra_context) else "") +
-                "Look at this screenshot. Find EVERY math or geometry problem visible.\n\n"
-                "CRITICAL — HOW TO IDENTIFY PROBLEMS:\n"
-                "- A number inside a GREEN CIRCLE or any colored circle (① ② ③) = problem number\n"
-                "- Any diagram, triangle, or geometric figure NEXT TO or BELOW a circled number = that IS the problem\n"
-                "- Plain numbers '1.', '2.', 'Q1' etc followed by text or a diagram = problems\n"
-                "- NEVER skip a numbered item just because it shows a diagram\n"
-                "- Geometry diagrams with angle measures, side lengths, or shape labels are ALL math problems\n\n"
-                "PROBLEM TYPES — adapt your output to what you see:\n"
-                "- EQUATION_SOLVE: solve for x (or variable). Give vertical_method as column layout.\n"
-                "- FILL_BLANK: one or more blanks to fill. answer = the word/number(s) that go in the blank(s).\n"
-                "- MULTIPLE_CHOICE: select one or more options. answer = the correct choice letter(s) and text.\n"
-                "- GEOMETRY: diagram, angles, sides. Use diagram_data and diagram_description.\n"
-                "- SHORT_ANSWER: brief numeric or symbolic answer.\n\n"
-                "For EACH problem provide ALL fields:\n"
-                "- problem_type: one of EQUATION_SOLVE, FILL_BLANK, MULTIPLE_CHOICE, GEOMETRY, SHORT_ANSWER\n"
-                "- problem_label: number/label if visible (e.g. '1.', 'Q3') — null if not visible\n"
-                "- problem: exact problem text. If it is a diagram problem describe it fully\n"
-                "- answer: CLEAN final answer. For equations: 'x = 57' or 'y = 2'. Not a long expression. For fill-in: the exact blank value(s). For MCQ: e.g. 'B) 42'\n"
-                "- steps: array of step-by-step solution strings\n"
-                "- explanations: array of plain English explanation per step (SAME length as steps)\n"
-                "- vertical_method: For EQUATION_SOLVE or when algebra is shown in columns, use a COLUMN layout: one equation per line, right-align style. Example (use \\n for newlines):\n"
-                "  '    5x - 16 = 4x + 41\\n           x = 57'\n"
-                "  Or: '  2x + 3 = 7\\n  2x = 4\\n  x = 2'. No prose, only equations. For fill-in/MCQ/geometry with no algebra column, use null or a brief calculation if needed.\n"
-                "- graph_eq: for ANY plottable function provide 'y=expr'. For geometry problems provide null\n"
-                "- diagram_data: for geometry/diagram problems, provide a JSON object with:\n"
-                "    points: {\"A\":[x,y], \"B\":[x,y], ...} — place points on a coordinate grid that accurately reflects the shape. Use real proportions from the image.\n"
-                "    edges: [[\"A\",\"B\"],[\"B\",\"C\"],...] — line segments to draw\n"
-                "    angles: {\"B\":\"90°\",...} — angle label at each vertex (include 'right' or '90' for right angles so a square marker is drawn)\n"
-                "    labels: {\"AB\":\"6y-16\",\"BC\":\"4y+6\",...} — side length expressions from the problem\n"
-                "    title: short description e.g. 'Triangle ABC'\n"
-                "  null for pure algebra/non-geometry problems\n"
-                "- diagram_description: plain text description of the diagram for geometry problems. null for pure algebra\n"
-                "- has_graph: true if graph_eq is not null\n"
-                "- confident: false only if you cannot clearly read the problem\n\n"
-                "RULES:\n"
-                "- Every graphable function MUST have graph_eq\n"
-                "- Geometry problems with triangles/shapes must have diagram_description\n"
-                "- Steps and explanations must ALWAYS be present\n"
-                + ("- Where it helps understanding, include a brief additional worked example after the main solution.\n\n"
+                "You are an expert math tutor. Analyze this screenshot and solve EVERY math or geometry problem visible.\n\n"
+
+                "━━ STEP 1: IDENTIFY ALL PROBLEMS ━━\n"
+                "- Circled numbers ①②③, '1.', 'Q1', 'a)', 'b)' = problem labels\n"
+                "- Any diagram, triangle, shape WITH a number = a problem\n"
+                "- Equations, expressions, word problems = all problems\n"
+                "- NEVER skip a problem just because it has a diagram\n\n"
+
+                "━━ STEP 2: DETECT THE CORRECT PROBLEM TYPE ━━\n"
+                "Choose ONE type per problem:\n"
+                "• EQUATION_SOLVE — has an = sign and a variable to isolate (x, y, n, etc.)\n"
+                "  → Use BOTH horizontal steps AND a clean vertical column layout\n"
+                "  → Horizontal: describe what operation is done at each step\n"
+                "  → Vertical: right-aligned column equations showing the work\n\n"
+                "• ARITHMETIC — addition, subtraction, multiplication, division, fractions, decimals\n"
+                "  → Show work in vertical column format (standard long-form method)\n"
+                "  → e.g. long multiplication, long division, fraction simplification steps\n\n"
+                "• GEOMETRY — diagrams, angles, triangles, shapes, area/perimeter\n"
+                "  → Identify the theorem or formula used (Pythagorean, angle sum, etc.)\n"
+                "  → Show substitution step: write the formula, then substitute values\n"
+                "  → Include diagram_data for rendering\n\n"
+                "• WORD_PROBLEM — written scenario requiring math to solve\n"
+                "  → Extract the key values first, then set up the equation, then solve\n\n"
+                "• MULTIPLE_CHOICE — options A/B/C/D given\n"
+                "  → Eliminate wrong answers, explain why correct one is right\n\n"
+                "• FILL_BLANK — blank(s) to complete\n"
+                "  → Provide the exact value(s) for each blank\n\n"
+                "• SHORT_ANSWER — brief numeric/symbolic result needed\n\n"
+
+                "━━ STEP 3: BUILD THE SOLUTION ━━\n"
+                "For EACH problem return ALL these fields:\n\n"
+
+                "problem_type: one of EQUATION_SOLVE, ARITHMETIC, GEOMETRY, WORD_PROBLEM, MULTIPLE_CHOICE, FILL_BLANK, SHORT_ANSWER\n\n"
+
+                "solving_method: SHORT string naming the method used. Examples:\n"
+                "  'Inverse operations', 'Quadratic formula', 'Pythagorean theorem',\n"
+                "  'Angle sum property', 'Long division', 'Substitution', 'Elimination',\n"
+                "  'FOIL / distributive property', 'Area formula', 'Ratio & proportion'\n\n"
+
+                "problem_label: the number/letter label visible (e.g. '1.', 'Q3', 'a)') — null if none\n\n"
+
+                "problem: the exact problem text. For diagram problems describe fully what is shown.\n\n"
+
+                "answer: the clean final answer only. Examples: 'x = 4', 'y = -3', '42', 'B) 15 cm'\n\n"
+
+                "steps: array of step strings — EACH step should be a SHORT, CLEAR action.\n"
+                "  Good: ['Write the equation: 3x + 6 = 18', 'Subtract 6 from both sides: 3x = 12', 'Divide both sides by 3: x = 4']\n"
+                "  Bad: long paragraphs, or just the final answer with no working\n"
+                "  For WORD_PROBLEM: first step = 'Identify knowns: ...', then set up equation, then solve\n"
+                "  For GEOMETRY: first step = the theorem/formula, then substitution, then calculation\n\n"
+
+                "explanations: array of plain English WHY for each step — same length as steps.\n"
+                "  Each explanation = 1 sentence. Tell the student WHY this step is done, not what.\n"
+                "  Good: 'We subtract 6 to cancel out the +6 on the left side, leaving x alone'\n"
+                "  Bad: 'Subtract 6'\n\n"
+
+                "vertical_method: A clean column-format layout of the working. Rules:\n"
+                "  - For EQUATION_SOLVE: show each transformation on its own line, aligned by = sign\n"
+                "    Example: '  3x + 6 = 18\\n  3x = 12\\n   x = 4'\n"
+                "  - For ARITHMETIC: show digits aligned in columns (standard written method)\n"
+                "    Example for 47×23: '   47\\n× 23\\n────\\n  141  (47×3)\\n +940  (47×20)\\n────\\n 1081'\n"
+                "  - For GEOMETRY with algebra: show formula substitution aligned\n"
+                "    Example: 'a² + b² = c²\\n6² + 8² = c²\\n36 + 64 = c²\\n    100 = c²\\n      c = 10'\n"
+                "  - For MULTIPLE_CHOICE / FILL_BLANK with no column work: null\n\n"
+
+                "horizontal_steps: array of strings — same as steps but written as a LEFT-TO-RIGHT flowing equation chain.\n"
+                "  Use arrows → between transformations. Example:\n"
+                "  ['3x + 6 = 18  →  subtract 6  →  3x = 12', '3x = 12  →  divide by 3  →  x = 4']\n"
+                "  This gives students TWO ways to follow the working (vertical column + horizontal flow).\n"
+                "  For pure arithmetic or geometry, adapt as needed or use null.\n\n"
+
+                "graph_eq: 'y=expr' for ANY plottable function. null for geometry/word problems/arithmetic.\n\n"
+
+                "diagram_data: for GEOMETRY problems with shapes:\n"
+                "  points: {'A':[x,y],'B':[x,y],...} — real proportions from image\n"
+                "  edges: [['A','B'],['B','C'],...]\n"
+                "  angles: {'B':'90°',...} — include 'right'/'90' for right-angle markers\n"
+                "  labels: {'AB':'6y-16','BC':'4y+6',...}\n"
+                "  title: short description e.g. 'Triangle ABC'\n"
+                "  null for non-geometry problems\n\n"
+
+                "diagram_description: plain English description of the geometry diagram. null for algebra.\n\n"
+
+                "has_graph: true if graph_eq is not null\n\n"
+
+                "confident: false ONLY if you genuinely cannot read the problem clearly\n\n"
+
+                "━━ RULES ━━\n"
+                "- steps and explanations MUST always be present and same length\n"
+                "- horizontal_steps should always be present for EQUATION_SOLVE and ARITHMETIC\n"
+                "- vertical_method should always be present for EQUATION_SOLVE and ARITHMETIC\n"
+                "- Geometry problems MUST have diagram_description\n"
+                "- Graphable functions MUST have graph_eq\n"
+                + ("- After the main solution, include one brief worked example to reinforce the concept.\n\n"
                    if examine_examples else
-                   "- Do NOT add extra worked examples or sample problems — solve the given problem only.\n\n")
-                + "Return ONLY valid JSON array (no markdown):\n"
-                '[{"problem_type":"EQUATION_SOLVE","problem_label":"1.","problem":"2x+3=7",'
-                '"steps":["Subtract 3: 2x=4","Divide by 2: x=2"],'
-                '"explanations":["Remove constant from left","Isolate x"],'
-                '"vertical_method":"  2x + 3 = 7\\n  2x = 4\\n  x = 2","answer":"x = 2",'
+                   "- Solve the given problem only — no extra worked examples.\n\n")
+                + "Return ONLY a valid JSON array, no markdown fences, no prose before or after:\n"
+                '[{"problem_type":"EQUATION_SOLVE","solving_method":"Inverse operations","problem_label":"1.","problem":"3x + 6 = 18",'
+                '"steps":["Write the equation: 3x + 6 = 18","Subtract 6 from both sides: 3x = 12","Divide both sides by 3: x = 4"],'
+                '"explanations":["This is the original equation we need to solve","We subtract 6 to remove the constant from the left side","We divide by 3 to isolate x completely"],'
+                '"horizontal_steps":["3x + 6 = 18  →  subtract 6  →  3x = 12","3x = 12  →  ÷3  →  x = 4"],'
+                '"vertical_method":"  3x + 6 = 18\\n  3x = 12\\n   x = 4","answer":"x = 4",'
                 '"graph_eq":null,"diagram_data":null,"diagram_description":null,"has_graph":false,"confident":true}]\n'
                 "No math found: []"
             )}
         ]}],
-        max_tokens=4000, temperature=0.1
+        max_tokens=5000, temperature=0.1
     )
     raw = re.sub(r"```(?:json)?|```", "", resp.choices[0].message.content.strip()).strip()
     m = re.search(r'\[.*\]', raw, re.DOTALL)
@@ -936,9 +997,118 @@ def ai_qa(question, history, is_followup, extra_context=None, extra_images=None)
     return answer, new_history
 
 
-# ══════════════════════════════════════════════════════════════════════
-#  FLASK APP
-# ══════════════════════════════════════════════════════════════════════
+def ai_write(mode, text, extra="", doc_context=""):
+    """Handles all Write tab modes: analyze, rewrite, outline, prompt_decode, tone, citation, argument, summary, vocab."""
+    client = get_client()
+    ctx_block = f"\n\n[DOCUMENT CONTEXT]:\n{doc_context.strip()}" if doc_context and doc_context.strip() else ""
+
+    prompts = {
+        "analyze": (
+            f"You are an expert writing coach. Analyze this essay or writing:{ctx_block}\n\n"
+            f"\"{text}\"\n\n"
+            "Return a structured analysis with these exact sections:\n"
+            "**THESIS** — Is there a clear thesis? Quote it or note it's missing.\n"
+            "**ARGUMENT FLOW** — Does the argument progress logically? Any gaps?\n"
+            "**EVIDENCE** — Is evidence used well? Specific or vague?\n"
+            "**TONE & VOICE** — Academic, casual, inconsistent? Any passive voice issues?\n"
+            "**GRAMMAR & STYLE** — Top 3 grammar or style issues found.\n"
+            "**STRENGTHS** — What genuinely works.\n"
+            "**GRADE** — Letter grade (A-F) with one sentence justification.\n"
+            "**PRIORITY FIXES** — Top 3 most impactful improvements to make.\n"
+            "Be specific, reference the actual text. Don't be vague."
+        ),
+        "rewrite": (
+            f"Rewrite the following text. Target style: {extra or 'clear student writing'}.\n"
+            f"Keep the same meaning and length. Sound natural, not AI-generated.{ctx_block}\n\n"
+            f"Text: {text}\n\nRewritten (return only the rewritten text):"
+        ),
+        "outline": (
+            f"Create a detailed essay outline for this topic or draft:{ctx_block}\n\n\"{text}\"\n\n"
+            f"Format: {'Argument style: '+extra if extra else 'standard 5-paragraph essay'}\n"
+            "Include:\n"
+            "- HOOK idea for intro\n"
+            "- THESIS statement\n"
+            "- 3 BODY PARAGRAPHS each with: topic sentence, 2 supporting points, transition\n"
+            "- CONCLUSION approach\n"
+            "Make it specific enough that someone could write from it immediately."
+        ),
+        "prompt_decode": (
+            f"A student has this essay prompt:\n\n\"{text}\"\n\n"
+            "Break it down completely:\n"
+            "**WHAT THEY'RE REALLY ASKING** — Plain English explanation\n"
+            "**KEY REQUIREMENTS** — Every specific thing that must be included\n"
+            "**COMMON MISTAKES** — What students usually get wrong on this type of prompt\n"
+            "**SUGGESTED APPROACH** — Step-by-step game plan to tackle it\n"
+            "**STRONG THESIS STARTER** — Give one example thesis that would score well\n"
+            "Be practical. A student should be able to start writing immediately after reading this."
+        ),
+        "tone": (
+            f"Analyze the tone and style of this writing:{ctx_block}\n\n\"{text}\"\n\n"
+            "Return:\n"
+            "**OVERALL TONE** — One word, then a sentence explanation\n"
+            "**FORMALITY LEVEL** — 1-10 scale (1=texting, 10=academic paper), with why\n"
+            "**PASSIVE VOICE** — List every passive voice sentence found\n"
+            "**REPEATED WORDS** — Words used too often (3+ times)\n"
+            "**WEAK PHRASES** — Vague or filler phrases to cut\n"
+            "**SENTENCE VARIETY** — Are sentences too similar in structure?\n"
+            "**FIXES** — Rewrite the 2 weakest sentences to show improvement\n"
+            "Be specific — quote actual lines from the text."
+        ),
+        "citation": (
+            f"Format this source as a proper citation. Style requested: {extra or 'MLA'}.\n\n"
+            f"Source info: {text}\n\n"
+            "Return:\n"
+            "**MLA** format\n"
+            "**APA** format\n"
+            "**Chicago** format\n"
+            "Then give a one-line in-text citation example for MLA and APA."
+        ),
+        "argument": (
+            f"Analyze the argument in this text:{ctx_block}\n\n\"{text}\"\n\n"
+            "Return:\n"
+            "**MAIN CLAIM** — What is being argued\n"
+            "**LOGIC CHECK** — Is the reasoning valid? Any logical fallacies?\n"
+            "**WEAKNESSES** — Specific holes in the argument\n"
+            "**MISSING EVIDENCE** — What would strengthen it\n"
+            "**COUNTERARGUMENT** — The strongest opposing argument someone could make\n"
+            "**HOW TO STRENGTHEN** — 3 concrete ways to make this argument more convincing\n"
+            "Quote specific lines from the text."
+        ),
+        "summary": (
+            f"Summarize this text:{ctx_block}\n\n\"{text}\"\n\n"
+            "Return THREE versions:\n"
+            "**ONE SENTENCE** — The absolute core idea in one sentence\n"
+            "**ONE PARAGRAPH** — Key points in 3-5 sentences\n"
+            "**BULLET BREAKDOWN** — 5-8 bullet points of the most important facts/ideas\n"
+            "Be accurate to the source. Don't add interpretation."
+        ),
+        "vocab": (
+            f"The word or phrase to analyze: \"{text}\"\n"
+            f"Context it appears in: \"{extra}\"\n\n"
+            "Return:\n"
+            "**DEFINITION** — Clear definition in context\n"
+            "**SYNONYMS** — 5 synonyms, ordered from casual to formal\n"
+            "**STRONGER ALTERNATIVES** — 3 more precise or impactful word choices\n"
+            "**EXAMPLE SENTENCE** — One example using the word well\n"
+            "**AVOID IF** — When NOT to use this word"
+        ),
+    }
+
+    prompt = prompts.get(mode, prompts["analyze"])
+    max_tok = 900 if mode in ("analyze","outline","argument","tone") else 600
+
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role":"system","content":"You are a sharp, expert writing coach and academic tutor. Be specific, practical, and direct. Reference the actual text provided."},
+                  {"role":"user","content":prompt}],
+        max_tokens=max_tok, temperature=0.4
+    )
+    return resp.choices[0].message.content.strip()
+
+# Persistent document context store (in-memory per session)
+_doc_context_store = {}
+
+
 app_flask   = Flask(__name__, static_folder=WEB_DIR)
 cfg         = load_cfg()
 engine      = TypingEngine()
@@ -1294,21 +1464,100 @@ def api_screenshot():
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()})
 
+def _file_b64_to_images(b64_str, filename=""):
+    """Convert a base64 file into a list of base64 PNG images (one per page for PDFs, one for images)."""
+    raw = base64.b64decode(b64_str)
+    fname = (filename or "").lower()
+    is_pdf = fname.endswith(".pdf") or raw[:4] == b"%PDF"
+    if is_pdf and HAS_FITZ:
+        pages = []
+        doc = _fitz.open(stream=raw, filetype="pdf")
+        for page in doc:
+            mat = _fitz.Matrix(2.0, 2.0)  # 2× zoom for readability
+            pix = page.get_pixmap(matrix=mat)
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            buf = io.BytesIO(); img.save(buf, format="PNG"); buf.seek(0)
+            pages.append(base64.b64encode(buf.getvalue()).decode("utf-8"))
+        doc.close()
+        return pages, True  # True = is_pdf
+    elif is_pdf and not HAS_FITZ:
+        # Fallback: send raw PDF b64 as a single image and hope vision model handles it
+        return [b64_str], True
+    else:
+        # It's an image — just return as-is
+        return [b64_str], False
+
+@app_flask.route("/api/scan_files", methods=["POST"])
+def api_scan_files():
+    """Scan attached files only (no screenshot). Handles images and PDFs page by page."""
+    data = request.json or {}
+    mode = data.get("mode", "scan")
+    extra_context = data.get("extra_context", [])
+    attached = data.get("attached_files", [])  # list of {b64, name, kind}
+    strictness = data.get("strictness", cfg.get("scanner_wrong_answer_strictness","flag_all"))
+    try:
+        all_results = []
+        for f in attached:
+            b64 = f.get("b64") or f if isinstance(f, str) else None
+            if not b64: continue
+            name = f.get("name", "") if isinstance(f, dict) else ""
+            pages, is_pdf = _file_b64_to_images(b64, name)
+            for pi, page_b64 in enumerate(pages):
+                page_label = f" (page {pi+1}/{len(pages)})" if is_pdf and len(pages) > 1 else ""
+                ctx = list(extra_context)
+                if page_label:
+                    ctx = [f"[Scanning: {name}{page_label}]"] + ctx
+                if mode == "math":
+                    results = ai_math(page_b64, examine_examples=cfg.get("examine_examples", False), extra_context=ctx)
+                    for p in results:
+                        p["_source"] = name + page_label
+                        eq = p.get("graph_eq"); diag = p.get("diagram_data")
+                        if eq and cfg.get("math_show_graphs", True): p["graph_b64"] = make_graph(eq)
+                        elif diag and cfg.get("math_show_graphs", True): p["graph_b64"] = make_diagram(diag)
+                        else: p["graph_b64"] = None
+                        if "diagram_description" not in p: p["diagram_description"] = None
+                        if cfg.get("math_formula_library", True) and p.get("answer"):
+                            add_to_formula_lib(p.get("problem",""), p.get("answer",""), p.get("steps",[]))
+                    all_results.extend(results)
+                else:
+                    results = ai_scan(page_b64, strictness, examine_examples=cfg.get("examine_examples", False), extra_context=ctx)
+                    for q2 in results:
+                        q2["_source"] = name + page_label
+                    all_results.extend(results)
+        if mode == "math":
+            add_to_history("math", all_results)
+            return jsonify({"ok": True, "result": {"problems": all_results}})
+        else:
+            add_to_history("scan", all_results)
+            return jsonify({"ok": True, "result": {"questions": all_results}})
+    except Exception as e:
+        return jsonify({"error": str(e), "trace": traceback.format_exc()})
+
 @app_flask.route("/api/screenshot/preview", methods=["POST"])
 def api_screenshot_preview():
-    """Take a screenshot and return full-res b64 for region selector.
-    The UI displays it scaled down via CSS but fractions are computed against
-    the naturalWidth/naturalHeight of the img element (= actual pixel dims here).
-    """
+    """Take a screenshot and return full-res b64 for region selector."""
     data = request.json or {}
     hwnd = data.get("hwnd")
+    result = [None]; error = [None]
+    def _capture():
+        try:
+            # bring_to_front=False so preview never steals focus or causes a 450ms delay
+            img = capture_window(hwnd, bring_to_front=False)
+            result[0] = img
+        except Exception as e:
+            error[0] = str(e)
+    t = threading.Thread(target=_capture, daemon=True)
+    t.start(); t.join(timeout=10)  # 10s hard cap — never hangs the UI
+    if t.is_alive():
+        return jsonify({"error": "Screenshot timed out — make sure the window is not minimized."})
+    if error[0]:
+        return jsonify({"error": error[0]})
     try:
-        img = capture_window(hwnd)
-        ow, oh = img.size
-        b64 = img_to_b64(img)
+        ow, oh = result[0].size
+        b64 = img_to_b64(result[0])
         return jsonify({"ok":True,"b64":b64,"w":ow,"h":oh})
     except Exception as e:
-        return jsonify({"error":str(e)})
+        return jsonify({"error": str(e)})
 
 @app_flask.route("/api/double_check", methods=["POST"])
 def api_double_check():
@@ -1395,6 +1644,35 @@ def api_humanize():
     except Exception as e:
         return jsonify({"error": str(e)})
 
+@app_flask.route("/api/write", methods=["POST"])
+def api_write():
+    data   = request.json or {}
+    mode   = data.get("mode","analyze")
+    text   = data.get("text","").strip()
+    extra  = data.get("extra","").strip()
+    doc_ctx= data.get("doc_context","").strip()
+    if not text: return jsonify({"error":"No text provided"})
+    try:
+        result = ai_write(mode, text, extra, doc_ctx)
+        return jsonify({"ok":True,"result":result})
+    except Exception as e:
+        return jsonify({"error":str(e)})
+
+@app_flask.route("/api/doc_context", methods=["POST"])
+def api_doc_context():
+    data = request.json or {}
+    action = data.get("action","set")
+    session_id = data.get("session","default")
+    if action == "set":
+        _doc_context_store[session_id] = data.get("text","").strip()
+        return jsonify({"ok":True,"chars":len(_doc_context_store[session_id])})
+    elif action == "get":
+        return jsonify({"ok":True,"text":_doc_context_store.get(session_id,"")})
+    elif action == "clear":
+        _doc_context_store.pop(session_id, None)
+        return jsonify({"ok":True})
+    return jsonify({"error":"Unknown action"})
+
 @app_flask.route("/api/formula_library", methods=["GET"])
 def api_formula_library(): return jsonify({"formulas": load_formula_lib()})
 
@@ -1408,25 +1686,49 @@ def api_history(): return jsonify({"history": load_history()})
 def api_history_clear(): save_history_file([]); return jsonify({"ok":True})
 
 # Local Music
-AUDIO_EXTS = {".mp3",".flac",".wav",".ogg",".m4a",".aac",".wma",".opus",".aiff"}
+AUDIO_EXTS = {".mp3",".flac",".wav",".ogg",".m4a",".aac",".wma",".opus",".aiff",".ape",".alac"}
+VIDEO_EXTS = {".mp4",".mkv",".avi",".mov",".wmv",".webm",".flv",".m4v",".ts",".3gp",".mpg",".mpeg"}
+IMAGE_EXTS = {".jpg",".jpeg",".png",".gif",".bmp",".webp",".tiff",".tif",".svg",".ico",".heic",".avif"}
+DOC_EXTS   = {".pdf",".txt",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".csv",".md",".rtf",".odt",".epub"}
+ALL_MEDIA_EXTS = AUDIO_EXTS | VIDEO_EXTS | IMAGE_EXTS | DOC_EXTS
+
+def _file_kind(ext):
+    if ext in AUDIO_EXTS: return "audio"
+    if ext in VIDEO_EXTS: return "video"
+    if ext in IMAGE_EXTS: return "image"
+    if ext in DOC_EXTS:   return "doc"
+    return "other"
 
 def _get_music_roots():
     roots = []
     home = os.path.expanduser("~")
-    for c in [os.path.join(home,"Music"),os.path.join(home,"Downloads"),os.path.join(home,"Desktop"),r"C:\Users\Public\Music"]:
+    for c in [os.path.join(home,"Music"),os.path.join(home,"Videos"),os.path.join(home,"Pictures"),
+              os.path.join(home,"Documents"),os.path.join(home,"Downloads"),os.path.join(home,"Desktop"),
+              r"C:\Users\Public\Music",r"C:\Users\Public\Videos"]:
         if os.path.isdir(c): roots.append(c)
     return roots
 
-def _scan_music_dir(directory, max_files=400):
+def _scan_music_dir(directory, max_files=2000):
     results = []
     try:
         for root, dirs, files in os.walk(directory):
             dirs[:] = [d for d in dirs if not d.startswith(".")]
             for fname in files:
                 ext = os.path.splitext(fname)[1].lower()
-                if ext in AUDIO_EXTS:
+                if ext in ALL_MEDIA_EXTS:
                     full = os.path.join(root, fname)
-                    results.append({"path":full,"name":os.path.splitext(fname)[0],"ext":ext.lstrip("."),"size":os.path.getsize(full)})
+                    try: size = os.path.getsize(full)
+                    except: size = 0
+                    try: mtime = os.path.getmtime(full)
+                    except: mtime = 0
+                    results.append({
+                        "path":  full,
+                        "name":  os.path.splitext(fname)[0],
+                        "ext":   ext.lstrip("."),
+                        "kind":  _file_kind(ext),
+                        "size":  size,
+                        "mtime": mtime,
+                    })
                     if len(results) >= max_files: return results
     except Exception: pass
     return results
@@ -1442,7 +1744,7 @@ try:
 except ImportError:
     pass
 
-# Cache for YouTube search pagination: one query's full result set (up to 50), keyed by query
+# Cache for YouTube search pagination: one query's full result set, keyed by query
 _music_search_cache_query = None
 _music_search_cache_results = None
 
@@ -1456,6 +1758,7 @@ def api_music_search():
         return jsonify({"error": "No query", "results": [], "page": 1, "has_prev": False, "has_next": False})
 
     PAGE_SIZE = 15
+    FETCH_COUNT = 500  # fetch up to 500 results (~33 pages)
     start = (page - 1) * PAGE_SIZE
 
     def return_paginated(full_list):
@@ -1475,40 +1778,39 @@ def api_music_search():
         try:
             # Use cache if same query and we have cached results
             if query == _music_search_cache_query and _music_search_cache_results is not None:
-                return return_paginated(_music_search_cache_results)  # slice may be empty if page beyond cache
+                return return_paginated(_music_search_cache_results)
 
-            # Cache miss — fetch up to 50 results
-            if _music_search_cache_query != query or _music_search_cache_results is None:
-                # Fetch up to 50 so we have ~3 pages
-                ydl_opts = {
-                    "quiet": True,
-                    "no_warnings": True,
-                    "extract_flat": "in_playlist",
-                    "default_search": "ytsearch50",
-                    "skip_download": True,
-                    "ignoreerrors": True,
-                }
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(f"ytsearch50:{query}", download=False)
-                entries = (info or {}).get("entries") or []
-                all_results = []
-                for v in entries:
-                    if not v:
-                        continue
-                    vid = v.get("id") or v.get("url","")
-                    thumb = v.get("thumbnail","")
-                    if not thumb and vid:
-                        thumb = f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg"
-                    all_results.append({
-                        "videoId":  vid,
-                        "title":    v.get("title","Untitled"),
-                        "author":   v.get("uploader") or v.get("channel",""),
-                        "duration": v.get("duration") or 0,
-                        "thumb":    thumb,
-                    })
-                _music_search_cache_query = query
-                _music_search_cache_results = all_results
-                return return_paginated(all_results)
+            # Cache miss — fetch up to FETCH_COUNT results
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "extract_flat": "in_playlist",
+                "default_search": f"ytsearch{FETCH_COUNT}",
+                "skip_download": True,
+                "ignoreerrors": True,
+                "playlistend": FETCH_COUNT,
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f"ytsearch{FETCH_COUNT}:{query}", download=False)
+            entries = (info or {}).get("entries") or []
+            all_results = []
+            for v in entries:
+                if not v:
+                    continue
+                vid = v.get("id") or v.get("url","")
+                thumb = v.get("thumbnail","")
+                if not thumb and vid:
+                    thumb = f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg"
+                all_results.append({
+                    "videoId":  vid,
+                    "title":    v.get("title","Untitled"),
+                    "author":   v.get("uploader") or v.get("channel",""),
+                    "duration": v.get("duration") or 0,
+                    "thumb":    thumb,
+                })
+            _music_search_cache_query = query
+            _music_search_cache_results = all_results
+            return return_paginated(all_results)
         except Exception:
             pass  # fall through to Invidious
 
@@ -1578,8 +1880,38 @@ def api_music_stream():
     if not path or not os.path.isfile(path):
         return jsonify({"error":"File not found"}), 404
     ext = os.path.splitext(path)[1].lower()
-    mime_map = {".mp3":"audio/mpeg",".flac":"audio/flac",".wav":"audio/wav",".ogg":"audio/ogg",".m4a":"audio/mp4",".aac":"audio/aac",".wma":"audio/x-ms-wma",".opus":"audio/opus",".aiff":"audio/aiff"}
-    mime = mime_map.get(ext, "audio/mpeg")
+    mime_map = {
+        # audio
+        ".mp3":"audio/mpeg",".flac":"audio/flac",".wav":"audio/wav",
+        ".ogg":"audio/ogg",".m4a":"audio/mp4",".aac":"audio/aac",
+        ".wma":"audio/x-ms-wma",".opus":"audio/opus",".aiff":"audio/aiff",
+        ".ape":"audio/ape",".alac":"audio/mp4",
+        # video
+        ".mp4":"video/mp4",".mkv":"video/x-matroska",".avi":"video/x-msvideo",
+        ".mov":"video/quicktime",".wmv":"video/x-ms-wmv",".webm":"video/webm",
+        ".flv":"video/x-flv",".m4v":"video/mp4",".ts":"video/mp2t",
+        ".3gp":"video/3gpp",".mpg":"video/mpeg",".mpeg":"video/mpeg",
+        # image
+        ".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",
+        ".gif":"image/gif",".bmp":"image/bmp",".webp":"image/webp",
+        ".tiff":"image/tiff",".tif":"image/tiff",".svg":"image/svg+xml",
+        ".ico":"image/x-icon",".heic":"image/heic",".avif":"image/avif",
+        # documents
+        ".pdf":"application/pdf",".txt":"text/plain",".md":"text/plain",
+        ".csv":"text/csv",".rtf":"application/rtf",
+        ".doc":"application/msword",
+        ".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".xls":"application/vnd.ms-excel",
+        ".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".ppt":"application/vnd.ms-powerpoint",
+        ".pptx":"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".epub":"application/epub+zip",".odt":"application/vnd.oasis.opendocument.text",
+    }
+    mime = mime_map.get(ext, "application/octet-stream")
+    # Images and docs — just serve directly, no range needed
+    if ext in IMAGE_EXTS or ext in DOC_EXTS:
+        return send_file(path, mimetype=mime, conditional=True)
+    # Audio and video — support range requests for seeking
     file_size = os.path.getsize(path)
     rh = request.headers.get("Range")
     if rh:
@@ -1845,7 +2177,7 @@ def _launch_app_window(url):
     profile_dir = os.path.join(BASE, ".edge_profile"); os.makedirs(profile_dir, exist_ok=True)
     try:
         proc = subprocess.Popen([exe, "--app="+url, "--user-data-dir="+profile_dir,
-            "--window-size=620,960", "--window-position=200,40",
+            "--window-size=640,960", "--window-position=200,40",
             "--no-first-run", "--no-default-browser-check",
             "--disable-extensions", "--disable-default-apps",
             "--disable-background-networking", "--disable-sync",
