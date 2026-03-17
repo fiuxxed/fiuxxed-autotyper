@@ -7,6 +7,47 @@ BASE      = os.path.dirname(os.path.abspath(__file__))
 SAVE_FILE = os.path.join(BASE, "settings.json")
 WEB_DIR   = os.path.join(BASE, "web")
 
+# ── Admin system ─────────────────────────────────────────────────────
+# IP is written to a hidden file in the user's home folder on startup.
+# Nobody else has this file. Admin routes check both the file AND password.
+_ADMIN_TOKEN_FILE = os.path.join(os.path.expanduser("~"), ".fiuxxed_admin")
+_ADMIN_PASSWORD   = "fiuxxedADMIN783"
+_ADMIN_SESSION    = set()   # active admin session tokens (in-memory, cleared on restart)
+
+def _write_admin_ip():
+    """Called once at startup — writes current machine's loopback marker."""
+    try:
+        import socket
+        # Get the local LAN ip too in case Flask sees that instead of 127.0.0.1
+        local_ip = socket.gethostbyname(socket.gethostname())
+        with open(_ADMIN_TOKEN_FILE, "w") as f:
+            f.write(json.dumps({"ips": ["127.0.0.1", "::1", "::ffff:127.0.0.1", local_ip]}))
+        _log(f"Admin IP file written to {_ADMIN_TOKEN_FILE}")
+    except Exception as e:
+        _log(f"Admin IP write failed: {e}")
+
+def _is_admin_ip(request_obj):
+    """Returns True only if the request comes from the admin's machine."""
+    try:
+        with open(_ADMIN_TOKEN_FILE) as f:
+            data = json.load(f)
+        allowed = data.get("ips", [])
+        remote = request_obj.remote_addr or ""
+        return remote in allowed
+    except Exception:
+        return False
+
+def _is_admin_session(request_obj):
+    """Returns True if request has a valid admin session token."""
+    token = request_obj.headers.get("X-Admin-Token","") or request_obj.json.get("admin_token","") if request_obj.is_json else request_obj.headers.get("X-Admin-Token","")
+    return token in _ADMIN_SESSION
+
+def _require_admin(request_obj):
+    """Returns (ok, error_response). Call at top of every admin route."""
+    if not _is_admin_ip(request_obj):
+        return False, jsonify({"error":"forbidden"})
+    return True, None
+
 # ── Global error log ─────────────────────────────────────────────────
 LOG_FILE = os.path.join(BASE, "error.log")
 
@@ -44,6 +85,7 @@ def _unhandled_exc(exc_type, exc_value, exc_tb):
 sys.excepthook = _unhandled_exc
 
 _log("AutoTyper starting up")
+_write_admin_ip()
 
 DEFAULTS = {
     "text": "", "wpm": 80, "countdown": 5,
@@ -840,9 +882,33 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 "  → Show work in vertical column format (standard long-form method)\n"
                 "  → e.g. long multiplication, long division, fraction simplification steps\n\n"
                 "• GEOMETRY — diagrams, angles, triangles, shapes, area/perimeter\n"
-                "  → Identify the theorem or formula used (Pythagorean, angle sum, etc.)\n"
+                "  → Carefully identify the EXACT theorem from the list below\n"
                 "  → Show substitution step: write the formula, then substitute values\n"
                 "  → Include diagram_data for rendering\n\n"
+                "  GEOMETRY THEOREM REFERENCE — match the diagram to the correct one:\n"
+                "  • Centroid Theorem: medians of a triangle meet at the centroid.\n"
+                "    The centroid divides each median in a 2:1 ratio (vertex to midpoint).\n"
+                "    If BH = distance from vertex to centroid, then BH = 2/3 of full median.\n"
+                "    Shorter segment (centroid to midpoint) = 1/2 of longer segment.\n"
+                "    e.g. BH=18 → EH = BH/2 = 9, BE = BH + EH = 27\n"
+                "    KEY SIGNAL: triangle with 3 medians drawn meeting at interior point H\n\n"
+                "  • Midsegment Theorem: segment connecting midpoints of 2 sides is parallel\n"
+                "    to the 3rd side and = 1/2 its length\n\n"
+                "  • Pythagorean Theorem: a²+b²=c² for right triangles\n\n"
+                "  • Triangle Angle Sum: angles add to 180°\n\n"
+                "  • Exterior Angle Theorem: exterior angle = sum of 2 non-adjacent interior angles\n\n"
+                "  • Isoceles Triangle: base angles equal, legs equal\n\n"
+                "  • Similar Triangles (AA/SSS/SAS): corresponding sides proportional\n\n"
+                "  • Angle Bisector Theorem: bisector divides opposite side proportionally\n\n"
+                "  • Perpendicular Bisector: equidistant from endpoints\n\n"
+                "  • Parallel Lines cut by Transversal: alternate interior angles equal,\n"
+                "    co-interior angles supplementary, corresponding angles equal\n\n"
+                "  • Inscribed Angle Theorem: inscribed angle = 1/2 central angle\n\n"
+                "  • Tangent-Radius: tangent perpendicular to radius at point of tangency\n\n"
+                "  • Triangle Inequality: sum of any 2 sides > 3rd side\n\n"
+                "  • Hinge Theorem: larger included angle → longer opposite side\n\n"
+                "  • Area formulas: triangle=½bh, parallelogram=bh, trapezoid=½(b1+b2)h\n\n"
+                "  • Special Right Triangles: 30-60-90 (1:√3:2), 45-45-90 (1:1:√2)\n\n"
                 "• WORD_PROBLEM — written scenario requiring math to solve\n"
                 "  → Extract the key values first, then set up the equation, then solve\n\n"
                 "• MULTIPLE_CHOICE — options A/B/C/D given\n"
@@ -858,6 +924,9 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
 
                 "solving_method: SHORT string naming the method used. Examples:\n"
                 "  'Inverse operations', 'Quadratic formula', 'Pythagorean theorem',\n"
+                "  'Centroid theorem (2:1 ratio)', 'Midsegment theorem', 'Angle bisector theorem',\n"
+                "  'Triangle angle sum', 'Exterior angle theorem', 'Similar triangles (AA)',\n"
+                "  'Isoceles triangle property', 'Parallel lines & transversal',\n"
                 "  'Angle sum property', 'Long division', 'Substitution', 'Elimination',\n"
                 "  'FOIL / distributive property', 'Area formula', 'Ratio & proportion'\n\n"
 
@@ -883,8 +952,23 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 "    Example: '  3x + 6 = 18\\n  3x = 12\\n   x = 4'\n"
                 "  - For ARITHMETIC: show digits aligned in columns (standard written method)\n"
                 "    Example for 47×23: '   47\\n× 23\\n────\\n  141  (47×3)\\n +940  (47×20)\\n────\\n 1081'\n"
-                "  - For GEOMETRY with algebra: show formula substitution aligned\n"
-                "    Example: 'a² + b² = c²\\n6² + 8² = c²\\n36 + 64 = c²\\n    100 = c²\\n      c = 10'\n"
+                "  - For GEOMETRY: use the EXACT format from textbooks with theorem name on right:\n"
+                "    Centroid example (BH=18, find EH):\n"
+                "    'EH = (1/2)(BH)          Centroid Theorem\\n"
+                "     EH = (1/2)(18)          Substitution Property\\n"
+                "     EH = 9                  Simplify'\n"
+                "    Centroid example (BH=18, find BE):\n"
+                "    'BE = (2)(EH)             Centroid Theorem\\n"
+                "     BE = (2)(9)              Substitution Property\\n"  
+                "     BE = 18 + 9             Definition of segment\\n"
+                "     BE = 27                  Simplify'\n"
+                "    Pythagorean example:\n"
+                "    'a² + b² = c²            Pythagorean Theorem\\n"
+                "     6² + 8² = c²            Substitution Property\\n"
+                "     36 + 64 = c²            Simplify\\n"
+                "     100 = c²                Simplify\\n"
+                "     c = 10                  Square root property'\n"
+                "    ALWAYS include the theorem/property name right-aligned on each line.\n"
                 "  - For MULTIPLE_CHOICE / FILL_BLANK with no column work: null\n\n"
 
                 "horizontal_steps: array of strings — same as steps but written as a LEFT-TO-RIGHT flowing equation chain.\n"
@@ -912,7 +996,7 @@ def ai_math(b64, examine_examples=False, extra_context=None, extra_images=None):
                 "━━ RULES ━━\n"
                 "- steps and explanations MUST always be present and same length\n"
                 "- horizontal_steps should always be present for EQUATION_SOLVE and ARITHMETIC\n"
-                "- vertical_method should always be present for EQUATION_SOLVE and ARITHMETIC\n"
+                "- vertical_method should always be present for EQUATION_SOLVE, ARITHMETIC, and GEOMETRY when numbers are being substituted\n"
                 "- Geometry problems MUST have diagram_description\n"
                 "- Graphable functions MUST have graph_eq\n"
                 + ("- After the main solution, include one brief worked example to reinforce the concept.\n\n"
@@ -2218,7 +2302,7 @@ def _keep_alive(proc=None):
         while not stop_evt.is_set():
             if proc and proc.poll() is not None:
                 stop_evt.set(); break
-            time.sleep(0.8)
+            time.sleep(0.2)  # check every 200ms instead of 800ms
     if proc:
         t = threading.Thread(target=_watch, daemon=True)
         t.start()
@@ -2270,7 +2354,7 @@ def main():
                     if _webview_window:
                         _webview_window.minimize()
                 def close(self):
-                    threading.Thread(target=lambda: (time.sleep(0.1), os._exit(0)), daemon=True).start()
+                    os._exit(0)  # instant close, no delay
 
             _webview_window = webview.create_window(
                 title="Fiuxxed's AutoTyper v9.1",
@@ -2296,6 +2380,160 @@ def main():
     if proc: _keep_alive(proc); return
 
     import webbrowser; print("Opening in browser: "+url); webbrowser.open(url); _keep_alive()
+
+# ══════════════════════════════════════════════════════════════════════
+#  ADMIN ROUTES — IP-locked + password protected
+# ══════════════════════════════════════════════════════════════════════
+
+@app_flask.route("/api/admin/ping", methods=["POST"])
+def api_admin_ping():
+    """Returns whether this machine is the admin machine. No password needed."""
+    return jsonify({"is_admin": _is_admin_ip(request)})
+
+@app_flask.route("/api/admin/login", methods=["POST"])
+def api_admin_login():
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("password") != _ADMIN_PASSWORD:
+        return jsonify({"error": "Wrong password"}), 403
+    import secrets
+    token = secrets.token_hex(32)
+    _ADMIN_SESSION.add(token)
+    return jsonify({"ok": True, "token": token})
+
+@app_flask.route("/api/admin/stats", methods=["POST"])
+def api_admin_stats():
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("admin_token") not in _ADMIN_SESSION:
+        return jsonify({"error": "Not authenticated"}), 403
+    # Get online users from presence file (Supabase is client-side, so we track what we know locally)
+    return jsonify({
+        "ok": True,
+        "uptime_s": int(time.time() - _start_time),
+        "settings": cfg,
+        "history_count": len(load_history()),
+        "formula_count": len(load_formula_lib()),
+        "chat_message_count": _admin_msg_count,
+        "online_users": list(_admin_online_users.values()),
+        "device_count": len(_app_devices),
+        "devices": [{"username": v["username"]} for v in _app_devices.values()],
+    })
+
+@app_flask.route("/api/admin/presence_update", methods=["POST"])
+def api_admin_presence_update():
+    """Called by clients to register their presence with the server for admin tracking."""
+    data = request.json or {}
+    uid  = data.get("user_id","")
+    name = data.get("username","")
+    if uid and name:
+        _admin_online_users[uid] = {"user_id": uid, "username": name, "last_seen": time.time()}
+        # Expire stale entries
+        stale = [k for k,v in _admin_online_users.items() if time.time()-v["last_seen"] > 15]
+        for k in stale: del _admin_online_users[k]
+    return jsonify({"ok": True})
+
+@app_flask.route("/api/admin/gc", methods=["POST"])
+def api_admin_gc():
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("admin_token") not in _ADMIN_SESSION:
+        return jsonify({"error": "Not authenticated"}), 403
+    import gc
+    freed = gc.collect()
+    try:
+        import psutil, os as _os
+        proc = psutil.Process(_os.getpid())
+        mem_mb = round(proc.memory_info().rss / 1024 / 1024, 1)
+    except: mem_mb = None
+    return jsonify({"ok": True, "freed": freed, "memory_mb": mem_mb})
+
+@app_flask.route("/api/admin/broadcast", methods=["POST"])
+def api_admin_broadcast():
+    """Store a system announcement that chat clients pick up on next poll."""
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("admin_token") not in _ADMIN_SESSION:
+        return jsonify({"error": "Not authenticated"}), 403
+    msg  = data.get("message","").strip()
+    mtype= data.get("type","info")
+    target=data.get("target","all")
+    if not msg: return jsonify({"error": "No message"})
+    _admin_announcements.append({"text": msg, "ts": time.time(), "type": mtype, "target": target})
+    return jsonify({"ok": True})
+
+@app_flask.route("/api/admin/announcement/poll", methods=["GET"])
+def api_admin_announcement_poll():
+    """Chat clients poll this to see if there's a pinned announcement."""
+    since = float(request.args.get("since", 0))
+    msgs = [a for a in _admin_announcements if a["ts"] > since]
+    return jsonify({"announcements": msgs})
+
+@app_flask.route("/api/admin/clear_history", methods=["POST"])
+def api_admin_clear_history():
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("admin_token") not in _ADMIN_SESSION:
+        return jsonify({"error": "Not authenticated"}), 403
+    save_history_file([])
+    return jsonify({"ok": True})
+
+@app_flask.route("/api/admin/banned_words", methods=["POST"])
+def api_admin_banned_words():
+    ok, err = _require_admin(request)
+    if not ok: return err
+    data = request.json or {}
+    if data.get("admin_token") not in _ADMIN_SESSION:
+        return jsonify({"error": "Not authenticated"}), 403
+    action = data.get("action")
+    word   = (data.get("word") or "").strip().lower()
+    if action == "get":
+        return jsonify({"ok": True, "words": list(_admin_banned_words)})
+    elif action == "add" and word:
+        _admin_banned_words.add(word)
+        return jsonify({"ok": True, "words": list(_admin_banned_words)})
+    elif action == "remove" and word:
+        _admin_banned_words.discard(word)
+        return jsonify({"ok": True, "words": list(_admin_banned_words)})
+    return jsonify({"error": "Unknown action"})
+
+@app_flask.route("/api/admin/logout", methods=["POST"])
+def api_admin_logout():
+    data = request.json or {}
+    _ADMIN_SESSION.discard(data.get("admin_token",""))
+    return jsonify({"ok": True})
+
+# Admin state
+_start_time = time.time()
+_admin_announcements = []
+_admin_banned_words  = set(["nigger","nigga","faggot","retard","cunt"])
+_admin_online_users  = {}   # uid -> {user_id, username, last_seen}
+_admin_msg_count     = 0
+_app_devices         = {}   # session_id -> {username, last_seen}  — every open app instance
+
+@app_flask.route("/api/admin/app_ping", methods=["POST"])
+def api_admin_app_ping():
+    """Called every 5s by every open app instance, signed in or not."""
+    data = request.json or {}
+    sid  = data.get("session_id","")
+    name = data.get("username","Anonymous")
+    if sid:
+        _app_devices[sid] = {"username": name, "last_seen": time.time()}
+        # Expire devices not seen in 15s
+        stale = [k for k,v in _app_devices.items() if time.time()-v["last_seen"] > 15]
+        for k in stale: del _app_devices[k]
+    return jsonify({"ok": True, "device_count": len(_app_devices)})
+
+@app_flask.route("/api/admin/app_close", methods=["POST"])
+def api_admin_app_close():
+    data = request.json or {}
+    _app_devices.pop(data.get("session_id",""), None)
+    return jsonify({"ok": True, "device_count": len(_app_devices)})
 
 if __name__ == "__main__":
     main()
