@@ -1,0 +1,33 @@
+# Secret keys — never push these
+secrets_local.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# PyInstaller output
+build/
+dist/
+*.spec
+
+# App data
+error.log
+settings.json
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Edge profile (generated at runtime)
+.edge_profile/
+
+# Admin IP file is local only
+.fiuxxed_admin
