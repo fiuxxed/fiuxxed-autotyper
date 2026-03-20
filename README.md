@@ -28,8 +28,6 @@ A Windows desktop app that auto-types text into any field with human-like rhythm
 # Installation Process: 
 1. **Delete any old python installations. Install Python 3.11 and make sure it's installed to PATH (You will see it at the bottom when opening the installion manager.)**
 - Windows Install: [Python Windows](https://www.python.org/ftp/python/3.11.0/python-3.11.0-amd64.exe)
-- Mac Install: [Python Mac](https://www.python.org/ftp/python/3.11.0/python-3.11.0-macos11.pkg)
-2. Install Microsoft WebView2 Runtime (Evergreen): [Microsoft WebView2 Runtime](https://go.microsoft.com/fwlink/?linkid=2124701)
 3. **Tap the green "Code" Button in **this** repository at the top of the page and Download ZIP!**
 4. **Unzip that folder by right clicking and extracting it (recommended to use WinRAR or 7zip.)**
 5. **Run install.bat once, then run.bat to launch anddd done! :D**
@@ -88,6 +86,20 @@ A Windows desktop app that auto-types text into any field with human-like rhythm
 
 ### What's next?
 - making the AI more trained
+
+
+## March 20, 2026
+
+### Fixed
+- made the AI more trained
+- too many bugs to count lol
+
+### Changed
+- smoother animations
+- again, too much to tell you. I was on a huge break lol
+
+### What's next?
+- figuring out more quality of life updates
   
   
 (will fix WAY more bugs very soon don't worry guys im aware of lots of them)
